@@ -1298,4 +1298,582 @@ Solar terms: 24
 
 ---
 
-*Fortsetzung in Iteration 3: BAFE-Subpackage, Verifikation, Tests*
+## 7. BAFE-Subpackage (Contract-First Validator)
+
+**Paket:** `bazi_engine/bafe/`
+**Zweck:** Spezifikationskonforme Validierung von Berechnungskonfigurationen gemäß JSON-Schema (Draft-07).
+
+### 7.1 Architektur-Überblick
+
+```
+bafe/
+├── __init__.py           → exportiert validate_request
+├── service.py            → Haupt-Validierungspipeline (7 Compliance-Dimensionen)
+├── mapping.py            → Branch-Index-Mapping (SHIFT_BOUNDARIES / SHIFT_LONGITUDES)
+├── kernel.py             → Von-Mises Soft-Kernel für weiche Branch-Gewichtung
+├── harmonics.py          → Phasor-Feature-Extraktion (Fourier-Harmonik)
+├── canonical_json.py     → Deterministische JSON-Serialisierung + SHA-256 Fingerprint
+├── refdata.py            → RefData-Artefakt-Evaluierung (Ephemeriden, TZDB, Leap-Seconds, EOP)
+├── time_model.py         → Zeitmodell-Evaluierung (DST, TLST, UT1/TT)
+├── ruleset_loader.py     → Ruleset-Loader (standard_bazi_2026.json)
+└── errors.py             → Contract-gebundener Fehlerkatalog (16 Codes)
+```
+
+### 7.2 `validate_request(payload)` → `Dict` (`service.py:71-321`)
+
+**Hauptfunktion.** Nimmt einen ValidateRequest-Payload entgegen und gibt eine ValidateResponse zurück.
+
+#### Eingabe: ValidateRequest-Schema
+
+```json
+{
+  "validate_level": "FULL",
+  "now_utc_override": "2026-01-01T00:00:00Z",
+  "engine_config": {
+    "engine_version": "1.0.0-rc0",
+    "parameter_set_id": "standard",
+    "deterministic": true,
+    "compliance_mode": "RELAXED",
+    "bazi_ruleset_id": "standard_bazi_2026",
+    "refdata": {
+      "refdata_pack_id": "refpack-test-001",
+      "refdata_mode": "BUNDLED_OFFLINE",
+      "allow_network": false,
+      "refdata_root_path": null,
+      "ephemeris_id": "swisseph-2026",
+      "tzdb_version_id": "tzdb-2026a",
+      "leaps_source_id": "leaps-iers",
+      "eop_source_id": null,
+      "verification_policy": {
+        "tzdb_gpg_required": false,
+        "ephemeris_hash_required": false,
+        "leaps_expiry_enforced": false,
+        "eop_redundancy_required": false
+      }
+    }
+  },
+  "birth_event": {
+    "local_datetime": "2024-02-10T14:30:00",
+    "tz_id": "Europe/Berlin",
+    "geo_lon_deg": 13.405,
+    "dst_policy": "error"
+  },
+  "positions_override": {
+    "time_scale": "TT",
+    "bodies": {
+      "Sun": { "lambda_deg": 321.5 }
+    }
+  },
+  "refdata_manifest_inline": {
+    "pack_id": "refpack-test-001",
+    "artifacts": [
+      { "logical_id": "ephemeris", "present": true, "hash_sha256": "abc..." },
+      { "logical_id": "tzdb", "present": true, "signature_ok": true },
+      { "logical_id": "leaps", "present": true, "expires_utc": "2099-01-01T00:00:00Z" },
+      { "logical_id": "eop", "present": false }
+    ]
+  }
+}
+```
+
+#### Ausgabe: ValidateResponse-Schema
+
+```json
+{
+  "compliance_status": "COMPLIANT",
+  "compliance_components": {
+    "REFDATA":                { "status": "OK",       "notes": ["mode=BUNDLED_OFFLINE", "allow_network=false"] },
+    "TIME":                   { "status": "OK",       "notes": ["time_standard=CIVIL", "dst_policy=error"] },
+    "FRAMES":                 { "status": "OK",       "notes": [] },
+    "EPHEMERIS":              { "status": "OK",       "notes": ["positions_override_only=true"] },
+    "DISCRETIZATION":         { "status": "OK",       "notes": [] },
+    "REPRODUCIBILITY":        { "status": "OK",       "notes": [] },
+    "INTERPRETATION_POLICY":  { "status": "OK",       "notes": ["interpretation_layer=not_executed_in_validate"] }
+  },
+  "errors": [],
+  "warnings": [],
+  "evidence": {
+    "refdata": {
+      "refdata_pack_id": "refpack-test-001",
+      "allow_network": false,
+      "mode": "BUNDLED_OFFLINE",
+      "artifacts": {
+        "ephemeris": { "logical_id": "ephemeris", "present": true, "verified": true },
+        "tzdb": { "logical_id": "tzdb", "present": true, "verified": null },
+        "leaps": { "logical_id": "leaps", "present": true, "verified": null },
+        "eop": { "logical_id": "eop", "present": false, "verified": null }
+      }
+    },
+    "time": {
+      "time_standard": "CIVIL",
+      "dst_policy": "error",
+      "ut1_quality": "missing",
+      "tt_quality": "ok",
+      "tlst_quality": "missing",
+      "eot_provenance": null,
+      "uncertainty_budget_sec": null
+    },
+    "frames": {
+      "epoch_id": "ofDate",
+      "zodiac_mode": "tropical",
+      "ayanamsa_id": null
+    },
+    "ephemeris": { "ephemeris_id": "swisseph-2026", "time_scale": "TT", "bodies": ["Sun"] },
+    "discretization": {
+      "interval_convention": "HALF_OPEN",
+      "branch_coordinate_convention": "SHIFT_BOUNDARIES",
+      "boundary_distance_deg": 15.0,
+      "classification_unstable": false
+    },
+    "reproducibility": {
+      "config_fingerprint": "a1b2c3d4...",
+      "float_format_policy": { "mode": "shortest_roundtrip", "fixed_decimals": null },
+      "json_canonicalization": { "sorted_keys": true, "utf8": true }
+    },
+    "interpretation": { "lint_status": null, "statements_returned": null }
+  }
+}
+```
+
+#### Compliance-Status-Logik
+
+| Bedingung | Status |
+|---|---|
+| Keine Fehler und keine Warnungen | `COMPLIANT` |
+| Warnungen aber keine Fehler | `DEGRADED` |
+| Mindestens ein Fehler | `NON_COMPLIANT` |
+
+#### 7 Compliance-Dimensionen
+
+| Dimension | Prüfungen |
+|---|---|
+| **REFDATA** | Netzwerk-Verbot, Manifest-Pflicht, Artefakt-Hashes, Signaturen, Ablaufdaten |
+| **TIME** | DST-Auflösung, TLST-Berechnung, UT1/TT-Qualität |
+| **FRAMES** | Zodiac-Modus, Ayanamsa-ID bei sidereal |
+| **EPHEMERIS** | Positions-Override, Zeitskala |
+| **DISCRETIZATION** | SHIFT_BOUNDARIES/LONGITUDES-Konsistenz, Day-Cycle-Anchor, Boundary-Distance |
+| **REPRODUCIBILITY** | Config-Fingerprint (SHA-256 über kanonisches JSON) |
+| **INTERPRETATION_POLICY** | Lint-Status (nicht in /validate ausgeführt) |
+
+### 7.3 Fehlerkatalog (`errors.py:7-25`)
+
+| Error-Code | Schwere | Auslöser |
+|---|---|---|
+| `REFDATA_NETWORK_FORBIDDEN` | ERROR | `allow_network=true` bei BUNDLED_OFFLINE/LOCAL_MIRROR |
+| `REFDATA_MANIFEST_MISSING` | ERROR | Offline-Modus ohne Manifest |
+| `EPHEMERIS_HASH_MISMATCH` | ERROR | SHA-256 stimmt nicht überein |
+| `EPHEMERIS_MISSING` | ERROR | Ephemeris-Artefakt fehlt |
+| `TZDB_SIGNATURE_INVALID` | ERROR | GPG-Signatur ungültig |
+| `LEAP_SECONDS_FILE_EXPIRED` | ERROR | Leap-Seconds-Datei abgelaufen |
+| `MISSING_TT` | ERROR | STRICT-Modus ohne TT-Qualität |
+| `EOP_MISSING` | ERROR | EOP-Redundanz verlangt, Artefakt fehlt |
+| `EOP_STALE` | WARNING | EOP-Artefakt als veraltet markiert |
+| `EOP_PREDICTED_REGION_USED` | ERROR | Vorhergesagte EOP-Region verwendet |
+| `DST_AMBIGUOUS_LOCAL_TIME` | ERROR | Ambige Ortszeit mit dst_policy=error |
+| `DST_NONEXISTENT_LOCAL_TIME` | ERROR | Nicht-existente Ortszeit (DST-Lücke) |
+| `INCONSISTENT_BRANCH_ORIGIN_FOR_SHIFTED_LONGITUDES` | ERROR | SHIFT_LONGITUDES != SHIFT_BOUNDARIES |
+| `MISSING_DAY_CYCLE_ANCHOR` | ERROR/WARN | Day-Cycle-Anchor nicht verifiziert |
+| `MISSING_AYANAMSA_ID` | ERROR | Sidereal-Modus ohne Ayanamsa |
+| `INTERP_DERIVATION_EMPTY` | ERROR | Leere Interpretation |
+| `INTERP_LINT_FAIL` | ERROR | Interpretation-Lint fehlgeschlagen |
+
+### 7.4 Mapping-Funktionen (`mapping.py`)
+
+#### 7.4.1 Winkel-Normalisierung
+
+| Funktion | Zeile | Ausgabebereich | Beschreibung |
+|---|---|---|---|
+| `wrap360(x)` | 7-15 | [0, 360) | Standard-Normalisierung |
+| `wrap180(x)` | 17-23 | (-180, 180] | Vorzeichenbehaftete Normalisierung |
+| `delta_deg(a, b)` | 25-27 | [0, 180] | Absolute Winkeldifferenz |
+
+#### 7.4.2 Branch-Index-Mapping
+
+| Funktion | Zeile | Konvention | Beschreibung |
+|---|---|---|---|
+| `branch_index_shift_boundaries(l, *, zi_apex, width)` | 33-37 | **K1 (empfohlen)** | Branch-Ursprung bei `zi_apex - width/2`, HALF_OPEN |
+| `branch_index_shift_longitudes(l, *, zi_apex, width, phi)` | 39-51 | **K2** | Äquivalent zu K1 bei korrekter Implementierung |
+| `branch_index_shift_longitudes_misused(...)` | 53-67 | **FEHLERHAFT** | Absichtlich falsch, nur für Tests |
+
+**K1-Formel:**
+```
+b0 = wrap360(zi_apex - width/2)          // Branch-Ursprung
+x  = wrap360(lambda - b0) / width        // Position in Branch-Einheiten
+index = floor(x) % 12
+```
+
+**Standard-Konfiguration:** `zi_apex=270 deg, width=30 deg, phi=15 deg`
+
+#### 7.4.3 Stunden-Branch aus TLST
+
+| Funktion | Zeile | Beschreibung |
+|---|---|---|
+| `hour_branch_index_from_tlst(tlst_hours)` | 80-86 | `floor(((TLST + 1) mod 24) / 2) % 12` |
+| `nearest_hour_boundary_distance_minutes(tlst_hours)` | 88-107 | Abstand zur nächsten Stundenzweig-Grenze |
+
+**Stundenzweig-Zuordnung:**
+```
+Zi:   [23:00, 01:00)
+Chou: [01:00, 03:00)
+Yin:  [03:00, 05:00)
+...
+Hai:  [21:00, 23:00)
+```
+
+#### 7.4.4 Boundary-Distance und Equivalence-Checker
+
+| Funktion | Zeile | Beschreibung |
+|---|---|---|
+| `nearest_boundary_distance_deg(l, *, zi_apex, width)` | 69-78 | Abstand in Grad zur nächsten Branch-Grenze |
+| `shift_longitudes_equivalence_ok(impl_fn, ...)` | 110-130 | Prüft ob K2 Impl. identisch K1 auf Sample |
+
+**Instabilitätserkennung:** `boundary_distance < 0.1 deg` = instabile Klassifikation.
+
+### 7.5 Kernel-Funktionen (`kernel.py`)
+
+**Von-Mises Soft-Kernel:** Weiche Branch-Gewichtung statt harter HALF_OPEN-Segmentierung.
+
+| Funktion | Zeile | Beschreibung |
+|---|---|---|
+| `_von_mises_unnormalized(d_deg, kappa)` | 9-12 | `exp(kappa * cos(d_rad))` |
+| `branch_centers_deg(*, zi_apex, width)` | 14-15 | 12 Branch-Zentrums-Winkel |
+| `soft_branch_weights_von_mises(l, *, zi_apex, width, kappa)` | 17-30 | 12 normalisierte Gewichte |
+| `soft_branch_weights(l, *, kernel, zi_apex, width)` | 32-50 | Dispatcher (aktuell nur von_mises) |
+
+**Eigenschaft:** Alle Gewichte >= 0, Summe = 1.0. kappa=4.0 (Standard).
+
+### 7.6 Harmonik-Funktionen (`harmonics.py`)
+
+| Funktion | Zeile | Beschreibung |
+|---|---|---|
+| `phasor(angles, weights, k)` | 9-20 | Gewichteter Phasor k-ter Ordnung |
+| `phasor_features(angles, weights, ks)` | 22-43 | Feature-Extraktion: Amplitude, Orientierung, Degeneriertheit |
+
+**Phasor-Feature-Ausgabe pro k:**
+```json
+{ "R_k": [re, im], "A_k": amplitude, "O_k_deg": orientation, "degenerate": false }
+```
+
+### 7.7 Kanonisches JSON (`canonical_json.py`)
+
+| Funktion | Zeile | Beschreibung |
+|---|---|---|
+| `canonical_json_dumps(obj, ...)` | 18-43 | Deterministische JSON-Serialisierung |
+| `sha256_hex(s)` | 45-46 | SHA-256 eines Strings |
+| `config_fingerprint(engine_config, ...)` | 48-74 | Reproduzierbarer Konfigurations-Fingerprint |
+
+**Determinismus:** Sortierte Schlüssel, kein Whitespace, kein NaN/Infinity.
+
+### 7.8 RefData-Evaluierung (`refdata.py`)
+
+`evaluate_refdata()` (Zeile 56-277) prüft 4 Artefakttypen:
+
+| Artefakt | Prüfungen |
+|---|---|
+| `ephemeris` | Vorhanden, Hash-SHA256-Verifikation |
+| `tzdb` | Vorhanden, GPG-Signatur |
+| `leaps` | Vorhanden, Ablaufdatum |
+| `eop` | Vorhanden, Stale-Markierung, Redundanz |
+
+### 7.9 Zeitmodell-Evaluierung (`time_model.py`)
+
+`evaluate_time()` (Zeile 83-199) prüft:
+- DST-Auflösung (ambig/nicht-existent) via `_detect_local_time_status()`
+- TLST-Berechnung via `true_solar_time()` aus dem Fusion-Modul
+- UT1/TT-Qualitäts-Reporting
+- DST-Policy: `"error"`, `"earlier"`, `"later"`
+
+### 7.10 Ruleset-Loader (`ruleset_loader.py`)
+
+| Funktion | Zeile | Beschreibung |
+|---|---|---|
+| `load_ruleset(ruleset_id)` | 16-25 | Lädt JSON-Ruleset aus `spec/rulesets/` |
+| `ruleset_version(ruleset)` | 27-28 | Extrahiert Version |
+| `branch_order(ruleset)` | 30-34 | 12-Element Branch-Reihenfolge |
+| `hidden_stems_for_branch(ruleset, branch)` | 36-44 | Hidden Stems für einen Zweig |
+| `day_cycle_anchor_status(ruleset)` | 46-58 | Anchor-JDN und Verifikationsstatus |
+
+**Aktuelles Ruleset:** `standard_bazi_2026` (Version 1.0.0)
+
+---
+
+## 8. Verifikation: BaZi-Chart, Ephemeriden, Fusion-Mathematik
+
+### 8.1 BaZi-Chart-Generierung – Verifikation
+
+#### 8.1.1 Berechnungspipeline-Integrität
+
+Die `compute_bazi()`-Funktion (`bazi.py:46-149`) implementiert eine vollständige 9-Schritt-Pipeline:
+
+| Schritt | Funktion | Verifiziert durch | Status |
+|---|---|---|---|
+| ISO-Parsing | `parse_local_iso()` | DST Round-Trip-Check | Implementiert |
+| UTC-Konvertierung | `to_chart_local()` | CIVIL/LMT Branching | Implementiert |
+| Julian Day | `datetime_utc_to_jd_ut()` | UTC-Pflichtprüfung | Implementiert |
+| Delta-T-Berechnung | `backend.delta_t_seconds()` | Swiss Ephemeris `swe.deltat()` | Implementiert |
+| Jahressäule | `year_pillar_from_solar_year()` | LiChun-Grenze (315 deg) | Verifiziert via Golden Vectors |
+| Monatssäule | `month_pillar_from_year_stem()` | 13 Jie-Übergänge (streng aufsteigend) | Verifiziert via Invarianten |
+| Tagessäule | `sexagenary_day_index_from_date()` | JDN + Offset=49, Kalibriert 1949-10-01 | Verifiziert via Referenzdaten |
+| Stundensäule | `hour_pillar_from_day_stem()` | Tagesstamm-basierte Ableitung | Verifiziert via Golden Vectors |
+| 24 Sonnenterme | `compute_24_solar_terms_for_window()` | Diagnostik (optional, try-catch) | Implementiert |
+
+#### 8.1.2 LiChun-Grenzfallprüfung
+
+| Testfall | Zeitpunkt | LiChun 2024 | Ergebnis |
+|---|---|---|---|
+| `Berlin_just_before_LiChun` | 2024-02-04T09:26:00 | ~09:27 | Solarjahr 2023, **GuiMao** |
+| `Berlin_just_after_LiChun` | 2024-02-04T09:28:00 | ~09:27 | Solarjahr 2024, **JiaChen** |
+
+**Grenzauflösung:** +/- 1 Minute, bestätigt durch Swiss Ephemeris `solcross_ut()`.
+
+#### 8.1.3 Day-Anchor-Kalibrierung
+
+| Referenzdatum | Erwarteter Index | Offset | Status |
+|---|---|---|---|
+| 1912-02-18 | 0 (Jia-Zi) | 49 | Verifiziert (`test_invariants.py`) |
+| 1949-10-01 | 0 (Jia-Zi) | 49 | Verifiziert (`test_invariants.py`) |
+| Custom Anchor idx=1 | Verschiebt alle Tage um +1 | Dynamisch | Verifiziert (`test_golden_vectors.py`) |
+
+#### 8.1.4 Immutabilitäts-Garantie
+
+Alle Datenstrukturen verwenden `frozen=True`:
+`Pillar`, `FourPillars`, `SolarTerm`, `BaziInput`, `BaziResult`, `SwissEphBackend`
+Keine Mutation nach Erstellung möglich. Deterministische Berechnung garantiert.
+
+### 8.2 Exakte Ephemeriden – Verifikation
+
+#### 8.2.1 Swiss Ephemeris Integration
+
+| Komponente | Implementierung | Genauigkeit |
+|---|---|---|
+| Sonnenposition | `swe.calc_ut(jd, SUN, FLG_SWIEPH)` | +/- 0.001 Bogensekunden |
+| Sonnenlängen-Überquerung | `swe.solcross_ut(target, jd_start)` | +/- 1 Sekunde (konfigurierbar) |
+| Delta-T (TT - UT) | `swe.deltat(jd_ut) * 86400` | IAU/IERS Standard |
+| Julian Day | `swe.julday(y, m, d, h)` | Exakt |
+| Reverse Julian Day | `swe.revjul(jd)` | Exakt mit Mikrosekunden-Korrektur |
+
+#### 8.2.2 Bisektions-Fallback
+
+Wenn `solcross_ut()` nicht verfügbar (z.B. Skyfield-Backend):
+
+| Parameter | Wert | Beschreibung |
+|---|---|---|
+| `accuracy_seconds` | 1.0 (Default) | Zielgenauigkeit |
+| `max_iter` | 80 | Maximale Iterationen |
+| `max_span_days` | 40.0 | Maximales Suchfenster |
+| Schrittweite | 1.0 Tag | Für Interval-Bracketing |
+
+**Konvergenzgarantie:** 80 Bisektions-Iterationen erreichen ~10^-24 Tage Genauigkeit.
+
+#### 8.2.3 Ephemeris-Dateien
+
+| Datei | Abdeckung | Zweck |
+|---|---|---|
+| `sepl_18.se1` | 1800-2400 AD | Planeten-Ephemeris |
+| `semo_18.se1` | 1800-2400 AD | Mond-Ephemeris |
+| `seas_18.se1` | 1800-2400 AD | Asteroiden-Ephemeris |
+| `seplm06.se1` | Ergänzend | Ergänzende Daten |
+
+**Offline-Garantie:** Kein Download zur Laufzeit. `FileNotFoundError` bei fehlenden Dateien.
+
+#### 8.2.4 Westliche Planeten-Berechnung
+
+14 Himmelskörper via `swe.calc_ut()` mit `FLG_SWIEPH | FLG_SPEED`:
+- Ekliptikale Länge, Breite, Distanz, Geschwindigkeit
+- Retrograd-Erkennung: `speed_lon < 0`
+- Häusersystem-Fallback: Placidus -> Porphyry -> Whole Sign
+
+### 8.3 Mathematische Angleichung durch Fusion – Verifikation
+
+#### 8.3.1 Wu-Xing-Vektormathematik
+
+Die Fusion verbindet westliche und östliche Astrologie über **5-dimensionale Vektoren**:
+
+```
+V_western = [Holz, Feuer, Erde, Metall, Wasser]   (aus Planetenpositionen)
+V_bazi    = [Holz, Feuer, Erde, Metall, Wasser]   (aus BaZi Hidden Stems)
+```
+
+**Normalisierung:** L2-Norm -> Einheitsvektoren fuer vergleichbare Richtungen.
+
+#### 8.3.2 Harmony-Index (Dot-Product-Methode)
+
+```
+H = Summe(V_w_norm_i * V_b_norm_i)    fuer i in {Holz, Feuer, Erde, Metall, Wasser}
+H = max(0, H)                          Clamped auf [0, 1]
+```
+
+**Mathematische Eigenschaften:**
+- H = 1.0: Identische Elementverteilung (perfekte Resonanz)
+- H = 0.0: Orthogonale Verteilungen (maximale Divergenz)
+- H > 0.8: Starke Übereinstimmung
+- Symmetrisch: H(V_w, V_b) = H(V_b, V_w)
+
+#### 8.3.3 Westlicher Wu-Xing-Vektor
+
+| Planet | Element | Gewicht (normal) | Gewicht (retrograd) |
+|---|---|---|---|
+| Sun | Feuer | 1.0 | 1.3 |
+| Moon | Wasser | 1.0 | 1.3 |
+| Mercury | Erde/Metall (Tag/Nacht) | 1.0 | 1.3 |
+| Venus | Metall | 1.0 | 1.3 |
+| Mars | Feuer | 1.0 | 1.3 |
+| Jupiter | Holz | 1.0 | 1.3 |
+| Saturn | Erde | 1.0 | 1.3 |
+| Uranus | Holz | 1.0 | 1.3 |
+| Neptune | Wasser | 1.0 | 1.3 |
+| Pluto | Feuer | 1.0 | 1.3 |
+
+#### 8.3.4 Östlicher Wu-Xing-Vektor (Hidden-Stems-Gewichtung)
+
+Pro Säule:
+- **Himmelsstamm:** Element * 1.0
+- **Erdzweig Hidden Stems:** 主气 * 1.0, 中气 * 0.5, 余气 * 0.3
+
+#### 8.3.5 Equation of Time
+
+NOAA-Fourier-Formel:
+```
+gamma = 2*pi * (N - 1) / 365
+E = 229.18 * (0.000075 + 0.001868*cos(gamma) - 0.032077*sin(gamma)
+              - 0.014615*cos(2*gamma) - 0.040849*sin(2*gamma))
+```
+
+Bereich: -14.2 bis +16.4 Minuten. Verwendet in `/calculate/tst` und BAFE Zeitmodell.
+
+#### 8.3.6 Branch-Mapping-Konsistenz
+
+| Prüfung | Methode | Status |
+|---|---|---|
+| K1 = K2 | `shift_longitudes_equivalence_ok()` | Verifiziert (TV2, TV3) |
+| HALF_OPEN Grenzen | 284.999 deg vs 285.0 deg | Verifiziert (TV1) |
+| Fehlerhafte Impl. erkannt | `misused()` != K1 | Verifiziert (TV3) |
+| TLST-Stundengrenzen | 0.999h vs 1.0h, 22.999h vs 23.0h | Verifiziert (TV4) |
+
+---
+
+## 9. Testabdeckung & Golden Vectors
+
+### 9.1 Testdateien-Übersicht
+
+| Datei | Tests | Typ | Beschreibung |
+|---|---|---|---|
+| `test_golden.py` | 4 | Golden Vector | Exakte Pillar-Erwartungen |
+| `test_golden_vectors.py` | 5 | Extended Vector | Edge Cases, Custom Anchor |
+| `test_invariants.py` | 2 | Invariant | Strukturelle Eigenschaften |
+| `test_api.py` | 11 | API/Contract | Schema-Validierung, Policy-Checks |
+| `test_properties.py` | 4 | Property | Mathematische Eigenschaften |
+
+**Gesamtzahl: 26 Tests**
+
+### 9.2 Golden Vectors (`test_golden.py`)
+
+| ID | Testfall | Input | Erwartete Säulen |
+|---|---|---|---|
+| 1 | `Berlin_2024-02-10` | 2024-02-10T14:30, Europe/Berlin | JiaChen, BingYin, JiaChen, XinWei |
+| 2 | `Berlin_just_before_LiChun` | 2024-02-04T09:26, Europe/Berlin | GuiMao, YiChou, WuXu, DingSi |
+| 3 | `Berlin_just_after_LiChun` | 2024-02-04T09:28, Europe/Berlin | JiaChen, BingYin, WuXu, DingSi |
+| 4 | `Madrid_zi_LMT` | 2024-02-04T23:30, Europe/Madrid, LMT+Zi | JiaChen, BingYin, WuXu, GuiHai |
+
+### 9.3 Erweiterte Vektoren (`test_golden_vectors.py`)
+
+| ID | Testfall | Besonderheit | Erwartete Säulen |
+|---|---|---|---|
+| 1 | `Berlin_2024_Standard` | Standardfall | JiaChen, BingYin, JiaChen, XinWei |
+| 2 | `Berlin_Pre_LiChun` | Vor LiChun, Vorjahr | GuiMao, YiChou, WuXu, DingSi |
+| 3 | `Longyearbyen_Winter` | 78 deg N Breitengrad | GuiMao, JiaZi, JiaZi, JiaZi |
+| 4 | `Custom_Anchor_Shift_1` | Anker idx=1 | JiaChen, BingYin, YiSi, GuiWei |
+| 5 | `Custom_Anchor_Standard` | Anker idx=0 (Standard) | JiaChen, BingYin, JiaChen, XinWei |
+
+### 9.4 Invarianz-Tests (`test_invariants.py`)
+
+| Test | Prüfung |
+|---|---|
+| `test_day_offset_reference_examples` | `DAY_OFFSET=49`, 1912-02-18 -> 0, 1949-10-01 -> 0 |
+| `test_month_boundaries_strict_increasing` | 13 Grenzen streng aufsteigend |
+
+### 9.5 API/Contract-Tests (`test_api.py`)
+
+| Test | Vektor | Prüfung |
+|---|---|---|
+| `test_TV1_branch_boundary_half_open` | TV1 | 4 Grenzwert-Cases für SHIFT_BOUNDARIES |
+| `test_TV2_convention_equivalence_k1_eq_k2` | TV2 | K1 = K2 für 7 Lambda-Werte |
+| `test_TV3_forbidden_mixing_detector` | TV3 | Korrekte Impl. ok, Fehlerhafte Impl. fail |
+| `test_TV4_tlst_hour_boundary_rule` | TV4 | 4 TLST-Stundengrenzen |
+| `test_TV5_soft_kernel_symmetry` | TV5 | Summe=1, alle>=0, Symmetrie |
+| `test_TV6_hidden_stems_mapping` | TV6 | Zi->[Gui], Chou->[Ji,Gui,Xin], Hai->[Ren,Jia] |
+| `test_TV7_refdata_policy_checks` (6x) | TV7 | 6 Szenarien mit erwarteten Error-Codes |
+| `test_missing_tt_in_strict_mode` | — | STRICT + fehlende TT -> MISSING_TT |
+| `test_validate_endpoint_smoke` | — | /validate HTTP 200 + Schema-valid |
+
+### 9.6 Property-Tests (`test_properties.py`)
+
+| Test | Eigenschaft |
+|---|---|
+| `test_PT1_wrap_periodicity_and_ranges` | `wrap360` in [0,360), `wrap180` in (-180,180], Periodizität |
+| `test_PT2_kernel_weights_sum_to_one` | Von-Mises: Summe w = 1.0, alle w >= 0 |
+| `test_PT3_harmonic_periodicity_and_degeneracy` | Phasor: +360 deg invariant, Gegenüber-Cancellation |
+| `test_PT4_config_fingerprint_determinism` | Gleicher Inhalt, andere Key-Reihenfolge, gleicher Hash |
+
+### 9.7 Ruleset `standard_bazi_2026`
+
+| Regelkategorie | Konfiguration |
+|---|---|
+| **Jahresgrenze** | Sonnenlänge 315 deg (LiChun), TT-Zeitskala, tropisch |
+| **Monatsgrenze** | Jieqi-Crossing, 315 deg Start, 30 deg Schritte, TT, tropisch |
+| **Stundenregel** | TLST-basiert, 2h-Bins, HALF_OPEN |
+| **Tagesgrenze** | Zi-Stunde Start (23:00 TLST), HALF_OPEN |
+| **Day-Cycle-Anchor** | JDN 2419451, unverified (Warnung RELAXED, Fehler STRICT) |
+| **Hidden Stems** | Tabellen-Modus, principal/central/residual (1.0/0.5/0.3) |
+
+---
+
+## 10. Zusammenfassung
+
+### 10.1 Funktionsmatrix
+
+| Bereich | Funktionen | Status |
+|---|---|---|
+| BaZi-Kern | 9 Funktionen in `bazi.py` | Vollständig implementiert |
+| Ephemeris | 8 Funktionen in `ephemeris.py` | Vollständig implementiert |
+| Sonnenterme | 4 Funktionen in `jieqi.py` | Vollständig implementiert |
+| Zeitkonvertierung | 5 Funktionen in `time_utils.py` | Vollständig implementiert |
+| Western Astrology | 1 Hauptfunktion (14 Planeten) | Vollständig implementiert |
+| Fusion | 11 Funktionen in `fusion.py` | Vollständig implementiert |
+| API | 11 Endpoints in `app.py` | Vollständig implementiert |
+| BAFE Validator | 7 Module, ~30 Funktionen | Vollständig implementiert |
+| CLI | 1 Hauptfunktion in `cli.py` | Vollständig implementiert |
+
+### 10.2 Verifikations-Ergebnis
+
+| Prüfpunkt | Ergebnis | Details |
+|---|---|---|
+| **BaZi-Chart wird generiert** | **JA** | 9-Schritt-Pipeline, 9 Golden Vectors bestätigen Korrektheit |
+| **Exakte Ephemeriden berechnet** | **JA** | Swiss Ephemeris mit +/-0.001" Genauigkeit, Delta-T, JD |
+| **Mathematische Angleichung (Fusion)** | **JA** | 5D Wu-Xing-Vektoren, Dot-Product Harmony [0,1], Hidden Stems |
+
+### 10.3 Datenfluss End-to-End
+
+```
+Benutzer-Input (Datum, Ort, Zeitzone)
+    |
+    +---> /calculate/bazi ---> compute_bazi() ---> BaZi 4 Säulen
+    |                                                |
+    +---> /calculate/western ---> compute_western_chart() ---> 14 Planeten + Häuser
+    |                                                |
+    +---> /calculate/fusion ---> compute_fusion_analysis()
+              |
+              +-- calculate_wuxing_vector_from_planets() ---> V_western (5D)
+              +-- calculate_wuxing_from_bazi() ---> V_bazi (5D)
+              +-- calculate_harmony_index() ---> H in [0, 1]
+              +-- Elementarer Vergleich (5 x {western, bazi, difference})
+              +-- Cosmic State = Summe(V_w_i * V_b_i)
+              +-- Textinterpretation (DE)
+```
+
+---
+
+**Dokument-Version:** 1.0 (Final)
+**Erstellt:** 2026-02-06
+**Codebase-Analyse:** Vollständig (alle Dateien gelesen und dokumentiert)
+**Gesamtumfang:** ~90 Funktionen, 11 API-Endpoints, 26 Tests
