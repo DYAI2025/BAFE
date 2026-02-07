@@ -31,7 +31,7 @@ primary_region = 'fra'
     path = "/health"
     protocol = "http"
 
-[[vm]]
+[vm]
   memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
