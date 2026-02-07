@@ -22,16 +22,21 @@ ENV SE_EPHE_PATH=/app/ephe
 ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
 
-# Copy and install dependencies
+# Copy dependency spec first for Docker layer caching
 COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
+
+# Copy source code (needed for pip install)
+COPY bazi_engine/ ./bazi_engine/
+
+# Install package (non-editable for production)
+RUN pip install --no-cache-dir .
+
+# Copy spec directory (schemas and rulesets required at runtime by bafe subpackage)
+COPY spec/ ./spec/
 
 # Test ephemeris files
 COPY test_ephe.py .
 RUN python test_ephe.py
-
-# Copy source
-COPY bazi_engine/ ./bazi_engine/
 
 # Expose port
 EXPOSE 8080
