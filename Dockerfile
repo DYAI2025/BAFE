@@ -33,6 +33,9 @@ RUN python test_ephe.py
 # Copy source
 COPY bazi_engine/ ./bazi_engine/
 
+# Install dependencies
+RUN pip install --no-cache-dir .
+
 # Expose port
 EXPOSE 8080
 
