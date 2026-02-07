@@ -21,5 +21,5 @@ The service listens on `PORT` (default `8080`) and exposes:
 
 ## Notes
 
-- The Docker image defaults to `EPHEMERIS_MODE=MOSEPH` for a fully offline ephemeris.
+- The service defaults to an offline Moshier ephemeris fallback when no Swiss Ephemeris files are present.
 - Health checks can use `/health`.

@@ -29,21 +29,15 @@ class SwissEphBackend:
     flags: int = swe.FLG_SWIEPH
     ephe_path: Optional[str] = None
     mode: str = "AUTO"
+
     def __post_init__(self) -> None:
-        # Determine mode and remember where it came from for better error reporting
-        mode_source = "constructor"
         mode = self.mode.upper()
         env_mode = os.environ.get("EPHEMERIS_MODE")
         if env_mode:
             mode = env_mode.upper()
-            mode_source = "EPHEMERIS_MODE"
 
         if mode not in {"AUTO", "SWIEPH", "MOSEPH"}:
-            if mode_source == "EPHEMERIS_MODE":
-                # Explicitly tag env-sourced values for easier diagnosis in deployed environments
-                raise ValueError(f"Unsupported ephemeris mode from EPHEMERIS_MODE={mode}")
-            else:
-                raise ValueError(f"Unsupported ephemeris mode from constructor: {mode}")
+            raise ValueError(f"Unsupported ephemeris mode: {mode}")
 
         if mode == "MOSEPH":
             self.flags = swe.FLG_MOSEPH
