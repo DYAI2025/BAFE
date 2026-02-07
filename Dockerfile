@@ -28,11 +28,11 @@ COPY pyproject.toml .
 # Copy source code (needed for pip install)
 COPY bazi_engine/ ./bazi_engine/
 
-# Copy spec directory (schemas and rulesets required at runtime by bafe subpackage)
-COPY spec/ ./spec/
-
 # Install package (non-editable for production)
 RUN pip install --no-cache-dir .
+
+# Copy spec directory (schemas and rulesets required at runtime by bafe subpackage)
+COPY spec/ ./spec/
 
 # Test ephemeris files
 COPY test_ephe.py .
