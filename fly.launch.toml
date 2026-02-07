@@ -1,0 +1,33 @@
+# Fly.io Launch Config
+# Usage: fly launch --name quissme-bazi-engine --region fra --dockerfile Dockerfile
+
+app = "quissme-bazi-engine"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SE_EPHE_PATH = "/app/ephe"
+  PYTHONUNBUFFERED = "1"
+
+[[services]]
+  http_checks = []
+  internal_port = 8080
+  processes = ["app"]
+  protocol = "tcp"
+  script_checks = []
+  
+  [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+  
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
