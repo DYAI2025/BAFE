@@ -29,6 +29,9 @@ ENV SE_EPHE_PATH=/usr/local/share/swisseph
 # Copy source code
 COPY bazi_engine/ ./bazi_engine/
 
+# Install dependencies
+RUN pip install --no-cache-dir .
+
 # Expose port
 EXPOSE 8080
 
