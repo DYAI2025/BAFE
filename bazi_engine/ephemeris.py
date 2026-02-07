@@ -24,14 +24,42 @@ class EphemerisBackend(Protocol):
     def sun_lon_deg_ut(self, jd_ut: float) -> float: ...
     def solcross_ut(self, target_lon_deg: float, jd_start_ut: float) -> Optional[float]: ...
 
-@dataclass(frozen=True)
+@dataclass
 class SwissEphBackend:
     flags: int = swe.FLG_SWIEPH
     ephe_path: Optional[str] = None
+    mode: str = "AUTO"
 
     def __post_init__(self) -> None:
-        path = ensure_ephemeris_files(self.ephe_path)
-        swe.set_ephe_path(path)
+        mode = self.mode.upper()
+        env_mode = os.environ.get("EPHEMERIS_MODE")
+        if env_mode:
+            mode = env_mode.upper()
+
+        if mode not in {"AUTO", "SWIEPH", "MOSEPH"}:
+            raise ValueError(f"Unsupported ephemeris mode: {mode}")
+
+        if mode == "MOSEPH":
+            self.flags = swe.FLG_MOSEPH
+            self.mode = "MOSEPH"
+            return
+
+        if mode == "SWIEPH":
+            path = ensure_ephemeris_files(self.ephe_path)
+            swe.set_ephe_path(path)
+            self.flags = swe.FLG_SWIEPH
+            self.mode = "SWIEPH"
+            return
+
+        # AUTO: prefer Swiss Ephemeris if present, fall back to Moshier.
+        try:
+            path = ensure_ephemeris_files(self.ephe_path)
+            swe.set_ephe_path(path)
+            self.flags = swe.FLG_SWIEPH
+            self.mode = "SWIEPH"
+        except FileNotFoundError:
+            self.flags = swe.FLG_MOSEPH
+            self.mode = "MOSEPH"
 
     def delta_t_seconds(self, jd_ut: float) -> float:
         return swe.deltat(jd_ut) * 86400.0
