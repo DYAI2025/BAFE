@@ -33,7 +33,8 @@ class SwissEphBackend:
     def __post_init__(self) -> None:
         mode = self.mode.upper()
         env_mode = os.environ.get("EPHEMERIS_MODE")
-        if env_mode:
+        # Only let the environment override when using the default AUTO mode.
+        if env_mode and mode == "AUTO":
             mode = env_mode.upper()
 
         if mode not in {"AUTO", "SWIEPH", "MOSEPH"}:
