@@ -367,7 +367,7 @@ def calculate_wuxing_endpoint(req: WxRequest):
                 "lat": req.lat
             },
             "wu_xing_vector": wx_normalized.to_dict(),
-            "dominant_element": max(wx_normalized.to_dict(), key=wx_normalized.to_dict().get),
+            "dominant_element": max(wx_normalized.to_dict(), key=lambda k: wx_normalized.to_dict()[k]),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time": TST
         }

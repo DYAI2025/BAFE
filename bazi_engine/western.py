@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 import swisseph as swe
 from .ephemeris import SwissEphBackend, datetime_utc_to_jd_ut
@@ -37,7 +37,7 @@ def compute_western_chart(
     lat: float, 
     lon: float, 
     alt: float = 0.0,
-    ephe_path: str = None
+    ephe_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Compute basic western chart: Planets + Houses.
@@ -91,7 +91,7 @@ def compute_western_chart(
         except swe.Error:
             continue
             
-    if cusps is None:
+    if cusps is None or ascmc is None:
         # Should never happen with Whole Sign, but just in case
         raise RuntimeError("Failed to calculate houses with all attempted systems.")
     
