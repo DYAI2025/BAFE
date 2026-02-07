@@ -44,14 +44,12 @@ def compute_western_chart(
     Includes True Node, Retrograde status, and High-Latitude fallback.
     """
     backend = SwissEphBackend(ephe_path=ephe_path)
-    if ephe_path:
-        swe.set_ephe_path(ephe_path)
     
     # JD (UT)
     jd_ut = datetime_utc_to_jd_ut(birth_utc_dt)
     
     bodies = {}
-    flags = swe.FLG_SWIEPH | swe.FLG_SPEED
+    flags = backend.flags | swe.FLG_SPEED
     
     for name, pid in PLANETS.items():
         try:
