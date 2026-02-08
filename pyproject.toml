@@ -18,6 +18,9 @@ dependencies = [
 dev = ["pytest>=8.0", "httpx>=0.27.0"]
 skyfield = ["skyfield>=1.45"]
 
+[tool.setuptools.packages.find]
+include = ["bazi_engine*"]
+
 [tool.setuptools.package-data]
 bazi_engine = ["py.typed"]
 "bazi_engine.bafe" = ["py.typed"]
