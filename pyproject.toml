@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bazi_engine"
-version = "1.0.0-rc0"
+version = "1.0.0rc0"
 description = "Astronomical BaZi (Four Pillars) calculation engine"
 requires-python = ">=3.10"
 dependencies = [
