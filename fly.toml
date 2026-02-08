@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for bafe on 2026-02-07T20:12:42Z
+# fly.toml app configuration file generated for bafe-2u0e2a on 2026-02-08T02:13:16Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'bafe'
-primary_region = 'fra'
+app = 'bafe-2u0e2a'
+primary_region = 'ams'
 
 [build]
 
@@ -17,6 +17,7 @@ primary_region = 'fra'
   processes = ['app']
 
 [[vm]]
+  memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 1024
+  memory_mb = 2048
