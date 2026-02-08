@@ -123,8 +123,8 @@ class TestSexagenaryCycle:
         """1949-10-01 should be Jia-Zi (甲子) day with DAY_OFFSET=49."""
         # JDN for 1949-10-01 (Gregorian)
         # Using standard formula: JDN = 367*Y - 7*(Y+(M+9)/12)/4 - 3*((Y+(M-9)/7)/100+1)/4 + 275*M/9 + D + 1721029
-        # For 1949-10-01: JDN ≈ 2433192
-        jdn_1949_10_01 = 2433192
+        # For 1949-10-01: JDN = 2433191 (same algorithm as bazi_engine.bazi.jdn_gregorian)
+        jdn_1949_10_01 = 2433191
         sexagenary_idx = (jdn_1949_10_01 + DAY_OFFSET) % 60
         # Jia-Zi is index 0
         assert sexagenary_idx == 0
