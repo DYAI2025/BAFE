@@ -52,7 +52,7 @@ PORT                   = 8080
 ElevenLabs Dashboard -> **Conversational AI** -> **Create Agent**
 
 **Agent Settings:**
-- Name: `Astro Berater` (oder frei wahlbar)
+- Name: `Astro Berater` (oder frei waehlbar)
 - Language: `German`
 - Voice: nach Wahl (z.B. "Rachel", "Antoni")
 
