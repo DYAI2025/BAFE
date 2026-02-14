@@ -1,6 +1,6 @@
 # ElevenLabs Voice Agent + BaZi Fusion Analyse - Komplettanleitung
 
-## Architektur-Uberblick
+## Architektur-Ueberblick
 
 ```
 ElevenLabs Voice Agent (Conversational AI)
