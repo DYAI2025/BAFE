@@ -459,6 +459,9 @@ def get_wuxing_mapping():
 class ElevenLabsChartRequest(BaseModel):
     birthDate: str = Field(..., description="Birth date in YYYY-MM-DD format")
     birthTime: Optional[str] = Field(None, description="Birth time in HH:MM format (optional)")
+    birthLat: Optional[float] = Field(None, description="Birth latitude in degrees")
+    birthLon: Optional[float] = Field(None, description="Birth longitude in degrees")
+    birthTz: Optional[str] = Field(None, description="Birth timezone (e.g. Europe/Berlin)")
 
 
 def verify_elevenlabs_signature(
@@ -547,31 +550,38 @@ async def elevenlabs_chart_webhook(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
 
-    # Build datetime string
+    # Resolve defaults
     birth_time = req.birthTime or "12:00"
+    lat = req.birthLat if req.birthLat is not None else 52.52
+    lon = req.birthLon if req.birthLon is not None else 13.405
+    tz = req.birthTz or "Europe/Berlin"
     datetime_str = f"{req.birthDate}T{birth_time}:00"
 
     try:
         # Parse and calculate
-        dt = parse_local_iso(datetime_str, "Europe/Berlin", strict=False, fold=0)
+        dt = parse_local_iso(datetime_str, tz, strict=False, fold=0)
         dt_utc = dt.astimezone(timezone.utc)
 
         # Calculate Western chart
-        western_chart = compute_western_chart(dt_utc, 52.52, 13.405)  # Default: Berlin
-        sun = western_chart.get("bodies", {}).get("Sun", {})
-        moon = western_chart.get("bodies", {}).get("Moon", {})
+        western_chart = compute_western_chart(dt_utc, lat, lon)
+        bodies = western_chart.get("bodies", {})
+        sun = bodies.get("Sun", {})
+        moon = bodies.get("Moon", {})
 
         sun_sign_idx = int(sun.get("zodiac_sign", 0))
         moon_sign_idx = int(moon.get("zodiac_sign", 0))
         sun_sign = ZODIAC_SIGNS_DE[sun_sign_idx]
         moon_sign = ZODIAC_SIGNS_DE[moon_sign_idx]
 
+        zodiac_en = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+                     "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+
         # Calculate BaZi
         inp = BaziInput(
             birth_local=datetime_str,
-            timezone="Europe/Berlin",
-            longitude_deg=13.405,
-            latitude_deg=52.52,
+            timezone=tz,
+            longitude_deg=lon,
+            latitude_deg=lat,
             time_standard="CIVIL",
             day_boundary="midnight",
             strict_local_time=False,
@@ -585,25 +595,69 @@ async def elevenlabs_chart_webhook(
         day_pillar = format_pillar(bazi_result.pillars.day)
         hour_pillar = format_pillar(bazi_result.pillars.hour)
 
+        # Build pillar dict for fusion analysis
+        bazi_pillars_for_fusion = {
+            "year": {"stamm": year_pillar["stamm"], "zweig": year_pillar["zweig"]},
+            "month": {"stamm": month_pillar["stamm"], "zweig": month_pillar["zweig"]},
+            "day": {"stamm": day_pillar["stamm"], "zweig": day_pillar["zweig"]},
+            "hour": {"stamm": hour_pillar["stamm"], "zweig": hour_pillar["zweig"]},
+        }
+
+        # Compute full fusion analysis
+        fusion = compute_fusion_analysis(
+            birth_utc_dt=dt_utc,
+            latitude=lat,
+            longitude=lon,
+            bazi_pillars=bazi_pillars_for_fusion,
+            western_bodies=bodies,
+        )
+
+        # Retrograde planets for voice agent context
+        retrogrades = [name for name, b in bodies.items() if b.get("is_retrograde")]
+
+        # Dominant elements
+        wu_xing = fusion["wu_xing_vectors"]
+        western_dominant = max(wu_xing["western_planets"], key=lambda k: wu_xing["western_planets"][k])
+        bazi_dominant = max(wu_xing["bazi_pillars"], key=lambda k: wu_xing["bazi_pillars"][k])
+
         return {
             "western": {
                 "sunSign": sun_sign,
                 "moonSign": moon_sign,
-                "sunSignEnglish": ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-                                   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"][sun_sign_idx],
+                "sunSignEnglish": zodiac_en[sun_sign_idx],
+                "moonSignEnglish": zodiac_en[moon_sign_idx],
+                "ascendant": western_chart.get("angles", {}).get("Ascendant"),
+                "retrogradePlanets": retrogrades,
             },
             "eastern": {
                 "yearAnimal": year_pillar["tier"],
                 "yearElement": year_pillar["element"],
                 "monthAnimal": month_pillar["tier"],
+                "monthElement": month_pillar["element"],
                 "dayAnimal": day_pillar["tier"],
                 "dayElement": day_pillar["element"],
                 "dayMaster": day_pillar["stamm"],
+                "hourAnimal": hour_pillar["tier"],
+                "hourElement": hour_pillar["element"],
+            },
+            "fusion": {
+                "harmonyIndex": fusion["harmony_index"]["harmony_index"],
+                "harmonyInterpretation": fusion["harmony_index"]["interpretation"],
+                "cosmicState": fusion["cosmic_state"],
+                "westernDominantElement": western_dominant,
+                "baziDominantElement": bazi_dominant,
+                "wuXingWestern": wu_xing["western_planets"],
+                "wuXingBazi": wu_xing["bazi_pillars"],
+                "elementalComparison": fusion["elemental_comparison"],
+                "interpretation": fusion["fusion_interpretation"],
             },
             "summary": {
                 "sternzeichen": sun_sign,
+                "mondzeichen": moon_sign,
                 "chinesischesZeichen": f"{year_pillar['element']} {year_pillar['tier']}",
                 "tagesmeister": f"{day_pillar['element']} ({day_pillar['stamm']})",
+                "harmonie": f"{fusion['harmony_index']['harmony_index']:.0%}",
+                "dominantesElement": f"West: {western_dominant}, Ost: {bazi_dominant}",
             }
         }
 
