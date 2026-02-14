@@ -56,7 +56,7 @@ ElevenLabs Dashboard -> **Conversational AI** -> **Create Agent**
 - Language: `German`
 - Voice: nach Wahl (z.B. "Rachel", "Antoni")
 
-### 2.2 System Prompt fur den Agent
+### 2.2 System Prompt für den Agenten
 
 Unter **Agent** -> **System Prompt** eintragen:
 
