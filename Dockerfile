@@ -32,20 +32,17 @@ RUN mkdir -p /usr/local/share/swisseph && \
 # Set ephemeris path
 ENV SE_EPHE_PATH=/usr/local/share/swisseph
 
-# Cache-bust: forces fresh COPY when code changes
-ARG CACHE_BUST=1
-
-# Copy and install Python package
+# Install Python dependencies first (cached layer)
 COPY pyproject.toml .
-COPY bazi_engine/ ./bazi_engine/
-COPY spec/ ./spec/
-
-# Install dependencies directly (without editable install)
 RUN pip install --upgrade pip setuptools wheel && \
     pip install pyswisseph>=2.10.3 fastapi>=0.109.0 uvicorn[standard]>=0.27.0 jsonschema>=4.20.0
 
-# Install the package itself
-RUN pip install --no-deps -e .
+# Copy application code LAST (invalidates on every code change)
+COPY bazi_engine/ ./bazi_engine/
+COPY spec/ ./spec/
+
+# Install package (non-editable so it uses the copied files directly)
+RUN pip install --no-deps .
 
 # Expose port
 EXPOSE 8080
