@@ -32,6 +32,9 @@ RUN mkdir -p /usr/local/share/swisseph && \
 # Set ephemeris path
 ENV SE_EPHE_PATH=/usr/local/share/swisseph
 
+# Cache-bust: forces fresh COPY when code changes
+ARG CACHE_BUST=1
+
 # Copy and install Python package
 COPY pyproject.toml .
 COPY bazi_engine/ ./bazi_engine/

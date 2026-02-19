@@ -134,7 +134,7 @@ class WesternRequest(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "service": "bazi_engine_v2", "version": "0.2.0"}
+    return {"status": "ok", "service": "bazi_engine_v2", "version": "1.0.0-rc1"}
 
 @app.get("/health")
 def health_check():
