@@ -2,7 +2,7 @@
 # Implements: Planet-to-Element mapping, Wu-Xing vectors, Harmony Index
 
 from __future__ import annotations
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional, Union
 from dataclasses import dataclass
 from math import sin, cos, radians, degrees, pi, sqrt, floor
 
@@ -81,20 +81,20 @@ class WuXingVector:
 def planet_to_wuxing(planet_name: str, is_night: bool = False) -> str:
     """
     Get Wu-Xing element for a planet.
-    
+
     Args:
         planet_name: Name of the planet
         is_night: Whether it's night time (affects Mercury)
-    
+
     Returns:
         Wu-Xing element name
     """
-    element = PLANET_TO_WUXING.get(planet_name, "Erde")  # Default to Earth
-    
+    element: Any = PLANET_TO_WUXING.get(planet_name, "Erde")
+
     if isinstance(element, list):
         # Mercury is dual: Earth by day, Metal by night
         return element[1] if is_night else element[0]
-    
+
     return element
 
 
@@ -146,7 +146,7 @@ def calculate_wuxing_vector_from_planets(
     return WuXingVector(*values)
 
 
-def is_night_chart(sun_longitude: float, ascendant: float = None) -> bool:
+def is_night_chart(sun_longitude: float, ascendant: Optional[float] = None) -> bool:
     """
     Determine if this is a night chart.
 
@@ -366,7 +366,7 @@ def true_solar_time(
     civil_time_hours: float,
     longitude_deg: float,
     day_of_year: int,
-    timezone_offset_hours: float = None
+    timezone_offset_hours: Optional[float] = None
 ) -> float:
     """
     Calculate True Solar Time (TST) from civil time.
@@ -428,7 +428,7 @@ def true_solar_time_from_civil(
     civil_time_hours: float,
     longitude_deg: float,
     day_of_year: int,
-    standard_meridian_deg: float = None
+    standard_meridian_deg: Optional[float] = None
 ) -> float:
     """
     Calculate True Solar Time from civil time with timezone standard meridian.
@@ -569,8 +569,8 @@ def generate_fusion_interpretation(
     # Find dominant elements
     w_dict = western.to_dict()
     b_dict = bazi.to_dict()
-    w_dominant = max(w_dict, key=w_dict.get)
-    b_dominant = max(b_dict, key=b_dict.get)
+    w_dominant = max(w_dict, key=lambda k: w_dict[k])
+    b_dominant = max(b_dict, key=lambda k: b_dict[k])
 
     lines = [
         f"Harmonie-Index: {harmony:.2%}",

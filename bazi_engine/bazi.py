@@ -41,7 +41,10 @@ def hour_pillar_from_day_stem(day_stem_index: int, hour_branch: int) -> Pillar:
 
 def _lichun_jd_ut_for_year(year: int, backend: SwissEphBackend) -> float:
     jd0 = swe.julday(year, 1, 1, 0.0)
-    return float(backend.solcross_ut(315.0, jd0))
+    result = backend.solcross_ut(315.0, jd0)
+    if result is None:
+        raise RuntimeError(f"Failed to find LiChun crossing for year {year}")
+    return float(result)
 
 def compute_bazi(inp: BaziInput) -> BaziResult:
     if inp.ephemeris_backend.lower() != "swisseph":

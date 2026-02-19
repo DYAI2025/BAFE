@@ -1,0 +1,25 @@
+# Railway Deployment (API Service)
+
+This repository ships with a Dockerfile that is ready for Railway.
+
+## Quick start
+
+1. Create a new **Railway Project** and add a **Service** from this GitHub repo.
+2. Railway detects the `Dockerfile` and builds the container.
+3. Set any optional environment variables (see below) and deploy.
+
+The service listens on `PORT` (default `8080`) and exposes:
+- `GET /health` for health checks.
+
+## Optional environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `ELEVENLABS_TOOL_SECRET` | Required only for the `/api/webhooks/chart` endpoint. |
+| `SE_EPHE_PATH` | Override ephemeris path if you mount custom ephemeris files. |
+| `EPHEMERIS_MODE` | `SWIEPH` (file-based) or `MOSEPH` (offline fallback). Defaults to auto. |
+
+## Notes
+
+- The service defaults to an offline Moshier ephemeris fallback when no Swiss Ephemeris files are present.
+- Health checks can use `/health`.

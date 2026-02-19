@@ -4,18 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bazi_engine"
-version = "1.0.0-rc0"
+version = "1.0.0rc0"
 description = "Astronomical BaZi (Four Pillars) calculation engine"
 requires-python = ">=3.10"
 dependencies = [
     "pyswisseph>=2.10.3",
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
+    "jsonschema>=4.20.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "httpx>=0.27.0"]
 skyfield = ["skyfield>=1.45"]
+
+[tool.setuptools.packages.find]
+include = ["bazi_engine*"]
+
+[tool.setuptools.package-data]
+bazi_engine = ["py.typed"]
+"bazi_engine.bafe" = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
