@@ -459,6 +459,7 @@ def get_wuxing_mapping():
 class ElevenLabsChartRequest(BaseModel):
     birthDate: str = Field(..., description="Birth date in YYYY-MM-DD format")
     birthTime: Optional[str] = Field(None, description="Birth time in HH:MM format (optional)")
+    birthPlace: Optional[str] = Field(None, description="Place name, e.g. 'Berlin, DE' — resolves lat/lon/timezone")
     birthLat: Optional[float] = Field(None, description="Birth latitude in degrees")
     birthLon: Optional[float] = Field(None, description="Birth longitude in degrees")
     birthTz: Optional[str] = Field(None, description="Birth timezone (e.g. Europe/Berlin)")
@@ -466,6 +467,45 @@ class ElevenLabsChartRequest(BaseModel):
         "earlier", description="DST fall-back: 'earlier' (fold=0) or 'later' (fold=1)")
     nonexistentTime: Literal["error", "shift_forward"] = Field(
         "error", description="DST spring-forward gap: 'error' rejects, 'shift_forward' auto-adjusts")
+
+
+def geocode_place(place: str, language: str = "de") -> Dict[str, Any]:
+    """Resolve place name to lat/lon/timezone via Open-Meteo Geocoding API (free, no key).
+
+    Accepts formats like "Berlin", "Berlin, DE", "Tokyo, JP".
+    If a comma-separated country code is present, results are filtered by it.
+    """
+    import json as _json
+    from urllib.parse import urlencode
+    from urllib.request import urlopen, Request as UrlReq
+
+    # Split "City, CC" into name + optional country filter
+    parts = [p.strip() for p in place.split(",", maxsplit=1)]
+    search_name = parts[0]
+    country_filter = parts[1].upper() if len(parts) > 1 and len(parts[1].strip()) == 2 else None
+
+    url = "https://geocoding-api.open-meteo.com/v1/search?" + urlencode({
+        "name": search_name, "count": 5, "language": language, "format": "json",
+    })
+    with urlopen(UrlReq(url, headers={"User-Agent": "bafe-bazi-engine/1.0"}), timeout=5) as resp:
+        data = _json.loads(resp.read().decode())
+
+    results = data.get("results") or []
+    if country_filter:
+        filtered = [r for r in results if r.get("country_code", "").upper() == country_filter]
+        if filtered:
+            results = filtered
+
+    if not results:
+        raise ValueError(f"Could not geocode place: {place}")
+    r = results[0]
+    return {
+        "lat": float(r["latitude"]),
+        "lon": float(r["longitude"]),
+        "timezone": str(r.get("timezone") or ""),
+        "name": str(r.get("name") or place),
+        "country_code": str(r.get("country_code") or ""),
+    }
 
 
 def verify_elevenlabs_signature(
@@ -554,12 +594,34 @@ async def elevenlabs_chart_webhook(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
 
-    # Resolve defaults
+    # Resolve location from birthPlace if lat/lon/tz not fully specified
+    geo_result = None
+    lat = req.birthLat
+    lon = req.birthLon
+    tz = req.birthTz
+
+    if req.birthPlace and (lat is None or lon is None or not tz):
+        try:
+            geo_result = geocode_place(req.birthPlace)
+            if lat is None:
+                lat = geo_result["lat"]
+            if lon is None:
+                lon = geo_result["lon"]
+            if not tz:
+                tz = geo_result["timezone"]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Geocoding failed for '{req.birthPlace}': {e}")
+
+    # Final fallbacks
+    if lat is None:
+        lat = 52.52
+    if lon is None:
+        lon = 13.405
+    if not tz:
+        tz = "Europe/Berlin"
+
     assumed_time = req.birthTime is None
     birth_time = req.birthTime or "12:00"
-    lat = req.birthLat if req.birthLat is not None else 52.52
-    lon = req.birthLon if req.birthLon is not None else 13.405
-    tz = req.birthTz or "Europe/Berlin"
     datetime_str = f"{req.birthDate}T{birth_time}:00"
 
     try:
@@ -698,6 +760,13 @@ async def elevenlabs_chart_webhook(
                     "adjustedMinutes": time_res.adjusted_minutes,
                     "assumedTime": assumed_time,
                     "warnings": warnings,
+                },
+                "location": {
+                    "lat": lat,
+                    "lon": lon,
+                    "tz": tz,
+                    "birthPlace": req.birthPlace,
+                    "geocoded": geo_result,
                 },
             },
         }
