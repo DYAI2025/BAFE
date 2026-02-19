@@ -9,6 +9,8 @@ from zoneinfo import ZoneInfo
 from bazi_engine.time_utils import (
     LocalTimeError,
     parse_local_iso,
+    resolve_local_iso,
+    LocalTimeResolution,
     lmt_tzinfo,
     to_chart_local,
     apply_day_boundary,
@@ -180,3 +182,66 @@ class TestApplyDayBoundary:
         result = apply_day_boundary(dt, "anything_else")
         # Unknown value should not modify (treated as midnight)
         assert result == dt
+
+
+class TestResolveLocalIso:
+    """Tests for resolve_local_iso with explicit DST handling."""
+
+    def test_normal_time_ok(self):
+        dt, res = resolve_local_iso("2024-02-10T14:30:00", "Europe/Berlin")
+        assert res.status == "ok"
+        assert res.warning is None
+        assert res.adjusted_minutes == 0
+        assert dt.year == 2024
+
+    def test_nonexistent_error_raises(self):
+        # 2024-03-31 02:30 does not exist in Europe/Berlin (spring forward 02:00→03:00)
+        with pytest.raises(LocalTimeError, match="Nonexistent"):
+            resolve_local_iso(
+                "2024-03-31T02:30:00", "Europe/Berlin", nonexistent="error"
+            )
+
+    def test_nonexistent_shift_forward(self):
+        dt, res = resolve_local_iso(
+            "2024-03-31T02:30:00", "Europe/Berlin", nonexistent="shift_forward"
+        )
+        assert res.status == "nonexistent_shifted"
+        assert res.adjusted_minutes > 0
+        assert res.warning is not None
+        # Shifted time must be valid (03:00 or later in CEST)
+        assert dt.hour >= 3
+
+    def test_ambiguous_earlier(self):
+        # 2024-10-27 02:30 occurs twice in Europe/Berlin (fall back 03:00→02:00)
+        dt, res = resolve_local_iso(
+            "2024-10-27T02:30:00", "Europe/Berlin", ambiguous="earlier"
+        )
+        assert res.status == "ambiguous"
+        assert res.fold == 0
+        assert res.warning is not None
+        assert "fall-back" in res.warning
+
+    def test_ambiguous_later(self):
+        dt, res = resolve_local_iso(
+            "2024-10-27T02:30:00", "Europe/Berlin", ambiguous="later"
+        )
+        assert res.status == "ambiguous"
+        assert res.fold == 1
+        # Later fold should have a different UTC offset than earlier
+        dt_earlier, _ = resolve_local_iso(
+            "2024-10-27T02:30:00", "Europe/Berlin", ambiguous="earlier"
+        )
+        assert dt.utcoffset() != dt_earlier.utcoffset()
+
+    def test_resolution_utc_consistency(self):
+        dt, res = resolve_local_iso("2024-06-15T10:00:00", "Europe/Berlin")
+        # resolved_utc_iso must match dt converted to UTC
+        expected_utc = dt.astimezone(timezone.utc).isoformat()
+        assert res.resolved_utc_iso == expected_utc
+
+    def test_resolution_fields_populated(self):
+        dt, res = resolve_local_iso("2024-06-15T10:00:00", "Europe/Berlin")
+        assert res.tz == "Europe/Berlin"
+        assert res.tz_abbrev is not None
+        assert res.input_local_iso == "2024-06-15T10:00:00"
+        assert res.resolved_local_iso == dt.isoformat()

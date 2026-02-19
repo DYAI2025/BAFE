@@ -22,7 +22,7 @@ from .fusion import (
     calculate_wuxing_from_bazi,
     calculate_harmony_index
 )
-from .time_utils import parse_local_iso, LocalTimeError
+from .time_utils import parse_local_iso, resolve_local_iso, LocalTimeError
 from .bafe import validate_request as bafe_validate_request
 # Legacy ephemeris bootstrap removed: no implicit downloads at startup
 
@@ -462,6 +462,10 @@ class ElevenLabsChartRequest(BaseModel):
     birthLat: Optional[float] = Field(None, description="Birth latitude in degrees")
     birthLon: Optional[float] = Field(None, description="Birth longitude in degrees")
     birthTz: Optional[str] = Field(None, description="Birth timezone (e.g. Europe/Berlin)")
+    ambiguousTime: Literal["earlier", "later"] = Field(
+        "earlier", description="DST fall-back: 'earlier' (fold=0) or 'later' (fold=1)")
+    nonexistentTime: Literal["error", "shift_forward"] = Field(
+        "error", description="DST spring-forward gap: 'error' rejects, 'shift_forward' auto-adjusts")
 
 
 def verify_elevenlabs_signature(
@@ -551,6 +555,7 @@ async def elevenlabs_chart_webhook(
         raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
 
     # Resolve defaults
+    assumed_time = req.birthTime is None
     birth_time = req.birthTime or "12:00"
     lat = req.birthLat if req.birthLat is not None else 52.52
     lon = req.birthLon if req.birthLon is not None else 13.405
@@ -558,8 +563,12 @@ async def elevenlabs_chart_webhook(
     datetime_str = f"{req.birthDate}T{birth_time}:00"
 
     try:
-        # Parse and calculate (strict=True to reject nonexistent DST gap times)
-        dt = parse_local_iso(datetime_str, tz, strict=True, fold=0)
+        # Resolve local time with explicit DST handling
+        dt, time_res = resolve_local_iso(
+            datetime_str, tz,
+            ambiguous=req.ambiguousTime,
+            nonexistent=req.nonexistentTime,
+        )
         dt_utc = dt.astimezone(timezone.utc)
 
         # Calculate Western chart
@@ -576,16 +585,17 @@ async def elevenlabs_chart_webhook(
         zodiac_en = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
                      "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
 
-        # Calculate BaZi
+        # Calculate BaZi using the resolved local time
+        resolved_naive_iso = dt.replace(tzinfo=None).isoformat()
         inp = BaziInput(
-            birth_local=datetime_str,
+            birth_local=resolved_naive_iso,
             timezone=tz,
             longitude_deg=lon,
             latitude_deg=lat,
             time_standard="CIVIL",
             day_boundary="midnight",
             strict_local_time=True,
-            fold=0
+            fold=time_res.fold,
         )
         bazi_result = compute_bazi(inp)
 
@@ -620,13 +630,30 @@ async def elevenlabs_chart_webhook(
         western_dominant = max(wu_xing["western_planets"], key=lambda k: wu_xing["western_planets"][k])
         bazi_dominant = max(wu_xing["bazi_pillars"], key=lambda k: wu_xing["bazi_pillars"][k])
 
+        # Ascendant sign
+        asc_raw = western_chart.get("angles", {}).get("Ascendant")
+        asc_sign = None
+        asc_deg_in_sign = None
+        if isinstance(asc_raw, (int, float)):
+            asc_sign = ZODIAC_SIGNS_DE[int(asc_raw // 30) % 12]
+            asc_deg_in_sign = round(asc_raw % 30, 2)
+
+        # Collect warnings for agent transparency
+        warnings: list[str] = []
+        if assumed_time:
+            warnings.append("Geburtszeit nicht angegeben: Ascendent/Häuser sind nur Näherung.")
+        if time_res.warning:
+            warnings.append(time_res.warning)
+
         return {
             "western": {
                 "sunSign": sun_sign,
                 "moonSign": moon_sign,
                 "sunSignEnglish": zodiac_en[sun_sign_idx],
                 "moonSignEnglish": zodiac_en[moon_sign_idx],
-                "ascendant": western_chart.get("angles", {}).get("Ascendant"),
+                "ascendant": asc_raw,
+                "ascendantSign": asc_sign,
+                "ascendantDegreeInSign": asc_deg_in_sign,
                 "retrogradePlanets": retrogrades,
             },
             "eastern": {
@@ -658,7 +685,21 @@ async def elevenlabs_chart_webhook(
                 "tagesmeister": f"{day_pillar['element']} ({day_pillar['stamm']})",
                 "harmonie": f"{fusion['harmony_index']['harmony_index']:.0%}",
                 "dominantesElement": f"West: {western_dominant}, Ost: {bazi_dominant}",
-            }
+            },
+            "meta": {
+                "time": {
+                    "inputLocal": time_res.input_local_iso,
+                    "resolvedLocal": time_res.resolved_local_iso,
+                    "resolvedUtc": time_res.resolved_utc_iso,
+                    "timezone": time_res.tz,
+                    "tzAbbrev": time_res.tz_abbrev,
+                    "status": time_res.status,
+                    "fold": time_res.fold,
+                    "adjustedMinutes": time_res.adjusted_minutes,
+                    "assumedTime": assumed_time,
+                    "warnings": warnings,
+                },
+            },
         }
 
     except LocalTimeError as e:
