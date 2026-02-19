@@ -22,7 +22,7 @@ from .fusion import (
     calculate_wuxing_from_bazi,
     calculate_harmony_index
 )
-from .time_utils import parse_local_iso, resolve_local_iso, LocalTimeError
+from .time_utils import resolve_local_iso, LocalTimeError
 from .bafe import validate_request as bafe_validate_request
 # Legacy ephemeris bootstrap removed: no implicit downloads at startup
 
@@ -104,6 +104,8 @@ class BaziRequest(BaseModel):
     standard: Literal["CIVIL", "LMT"] = "CIVIL"
     boundary: Literal["midnight", "zi"] = "midnight"
     strict: bool = True
+    ambiguousTime: Literal["earlier", "later"] = "earlier"
+    nonexistentTime: Literal["error", "shift_forward"] = "error"
 
 class WesternBodyResponse(BaseModel):
     name: str = Field(..., description="Planet name")
@@ -127,6 +129,8 @@ class WesternRequest(BaseModel):
     tz: str = Field("Europe/Berlin", description="Timezone name")
     lon: float = Field(13.4050, description="Longitude in degrees")
     lat: float = Field(52.52, description="Latitude in degrees")
+    ambiguousTime: Literal["earlier", "later"] = "earlier"
+    nonexistentTime: Literal["error", "shift_forward"] = "error"
 
 @app.get("/")
 def read_root():
@@ -158,6 +162,8 @@ def api_endpoint(
     tz: str = Query("Europe/Berlin", description="Timezone name"),
     lon: float = Query(13.4050, description="Longitude in degrees"),
     lat: float = Query(52.52, description="Latitude in degrees"),
+    ambiguousTime: Literal["earlier", "later"] = Query("earlier"),
+    nonexistentTime: Literal["error", "shift_forward"] = Query("error"),
 ):
     try:
         if ort:
@@ -169,9 +175,10 @@ def api_endpoint(
             else:
                 raise ValueError("Ort muss als 'lat,lon' angegeben werden, wenn gesetzt.")
 
-        dt = parse_local_iso(f"{datum}T{zeit}", tz, strict=True, fold=0)
-        from datetime import timezone
-
+        dt, _ = resolve_local_iso(
+            f"{datum}T{zeit}", tz,
+            ambiguous=ambiguousTime, nonexistent=nonexistentTime,
+        )
         dt_utc = dt.astimezone(timezone.utc)
         chart = compute_western_chart(dt_utc, lat, lon)
         sun = chart.get("bodies", {}).get("Sun")
@@ -196,15 +203,21 @@ def api_endpoint(
 @app.post("/calculate/bazi")
 def calculate_bazi_endpoint(req: BaziRequest):
     try:
+        dt_local, _ = resolve_local_iso(
+            req.date, req.tz,
+            ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
+        )
+        resolved_naive = dt_local.replace(tzinfo=None).isoformat()
+        fold = 0 if req.ambiguousTime == "earlier" else 1
         inp = BaziInput(
-            birth_local=req.date,
+            birth_local=resolved_naive,
             timezone=req.tz,
             longitude_deg=req.lon,
             latitude_deg=req.lat,
             time_standard=req.standard,
             day_boundary=req.boundary,
-            strict_local_time=req.strict,
-            fold=0
+            strict_local_time=True,
+            fold=fold,
         )
         res = compute_bazi(inp)
 
@@ -239,10 +252,11 @@ def calculate_bazi_endpoint(req: BaziRequest):
 @app.post("/calculate/western")
 def calculate_western_endpoint(req: WesternRequest):
     try:
-        # Parse time similar to BaZi
-        dt = parse_local_iso(req.date, req.tz, strict=True, fold=0)
-        # Convert to utc for ephemeris
-        dt_utc = dt.astimezone(timezone.utc)
+        dt_local, _ = resolve_local_iso(
+            req.date, req.tz,
+            ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
+        )
+        dt_utc = dt_local.astimezone(timezone.utc)
         
         chart = compute_western_chart(dt_utc, req.lat, req.lon)
         return chart
@@ -258,6 +272,8 @@ class FusionRequest(BaseModel):
     tz: str = Field("Europe/Berlin", description="Timezone name")
     lon: float = Field(..., description="Longitude in degrees")
     lat: float = Field(..., description="Latitude in degrees")
+    ambiguousTime: Literal["earlier", "later"] = "earlier"
+    nonexistentTime: Literal["error", "shift_forward"] = "error"
     bazi_pillars: Dict[str, Dict[str, str]] = Field(
         ..., 
         description="Ba Zi pillars from /calculate/bazi endpoint"
@@ -287,13 +303,15 @@ def calculate_fusion_endpoint(req: FusionRequest):
     - Interpretation
     """
     try:
-        # Parse time
-        dt = parse_local_iso(req.date, req.tz, strict=True, fold=0)
-        dt_utc = dt.astimezone(timezone.utc)
-        
+        dt_local, _ = resolve_local_iso(
+            req.date, req.tz,
+            ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
+        )
+        dt_utc = dt_local.astimezone(timezone.utc)
+
         # Get western chart
         western_chart = compute_western_chart(dt_utc, req.lat, req.lon)
-        
+
         # Compute fusion analysis
         fusion = compute_fusion_analysis(
             birth_utc_dt=dt_utc,
@@ -324,6 +342,8 @@ class WxRequest(BaseModel):
     tz: str = Field("Europe/Berlin", description="Timezone name")
     lon: float = Field(..., description="Longitude in degrees")
     lat: float = Field(..., description="Latitude in degrees")
+    ambiguousTime: Literal["earlier", "later"] = "earlier"
+    nonexistentTime: Literal["error", "shift_forward"] = "error"
 
 class WxResponse(BaseModel):
     input: Dict[str, Any]
@@ -341,13 +361,15 @@ def calculate_wuxing_endpoint(req: WxRequest):
     returns the elemental distribution vector.
     """
     try:
-        # Parse time
-        dt = parse_local_iso(req.date, req.tz, strict=True, fold=0)
+        dt, _ = resolve_local_iso(
+            req.date, req.tz,
+            ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
+        )
         dt_utc = dt.astimezone(timezone.utc)
-        
+
         # Get western chart
         western_chart = compute_western_chart(dt_utc, req.lat, req.lon)
-        
+
         # Calculate Wu-Xing vector
         wx_vector = calculate_wuxing_vector_from_planets(western_chart["bodies"])
         wx_normalized = wx_vector.normalize()
@@ -378,6 +400,8 @@ class TSTRequest(BaseModel):
     date: str = Field(..., description="ISO 8601 local date time")
     tz: str = Field("Europe/Berlin", description="Timezone name")
     lon: float = Field(..., description="Longitude in degrees")
+    ambiguousTime: Literal["earlier", "later"] = "earlier"
+    nonexistentTime: Literal["error", "shift_forward"] = "error"
 
 class TSTResponse(BaseModel):
     input: Dict[str, Any]
@@ -398,8 +422,11 @@ def calculate_tst_endpoint(req: TSTRequest):
     Essential for accurate Ba Zi hour pillar calculations.
     """
     try:
-        # Parse time
-        dt = parse_local_iso(req.date, req.tz, strict=True, fold=0)
+        # Resolve time with DST handling
+        dt, _ = resolve_local_iso(
+            req.date, req.tz,
+            ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
+        )
         
         # Get day of year
         day_of_year = dt.timetuple().tm_yday
