@@ -133,7 +133,8 @@ def evaluate_time(
                         if issue:
                             errors.append(issue)
                         if dt_local is not None:
-                            offset_h = dt_local.utcoffset().total_seconds() / 3600.0
+                            utc_offset = dt_local.utcoffset()
+                            offset_h = utc_offset.total_seconds() / 3600.0 if utc_offset else 0.0
                             civil_time = dt_local.hour + dt_local.minute/60.0 + dt_local.second/3600.0
                             day_of_year = int(dt_local.timetuple().tm_yday)
                             tlst_hours = float(true_solar_time(civil_time, lon, day_of_year, offset_h))

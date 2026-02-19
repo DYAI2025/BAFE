@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import floor
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 def wrap360(x: float) -> float:
     """Wrap to [0, 360)."""
@@ -113,7 +113,7 @@ def shift_longitudes_equivalence_ok(
     zi_apex_deg: float,
     branch_width_deg: float,
     phi_apex_offset_deg: float,
-    sample_lambdas: List[float] = None,
+    sample_lambdas: Optional[List[float]] = None,
 ) -> bool:
     """
     Mixing detector helper:

@@ -1,23 +1,23 @@
-# fly.toml app configuration file generated for baziengine-v2-qqrn0a on 2026-01-21T02:41:56Z
+# fly.toml app configuration file generated for bafe-2u0e2a on 2026-02-08T02:13:16Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'baziengine-v2-qqrn0a'
-primary_region = 'fra'
+app = 'bafe-2u0e2a'
+primary_region = 'ams'
 
 [build]
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1 # keep at least one machine running at all times
+  min_machines_running = 0
   processes = ['app']
 
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256
+  memory_mb = 2048

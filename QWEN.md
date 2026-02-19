@@ -1,22 +1,27 @@
-# BaZi Engine v0.2 - Development Context
+# BaZi Engine (BAFE) - Project Documentation
 
 ## Project Overview
 
-BaZi Engine is an astronomical calculation engine for Chinese astrology (Four Pillars of Destiny) that uses precise astronomical calculations to determine birth chart pillars. The engine calculates the Year, Month, Day, and Hour pillars based on astronomical solar-term boundaries rather than simple calendar dates, ensuring accuracy according to traditional Chinese astrological principles.
+**BaZi Engine** (also known as BAFE - BaZodiac Fusion Engine) is an advanced astronomical calculation engine for Chinese astrology (Four Pillars of Destiny / 八字). The engine calculates birth chart pillars (Year, Month, Day, Hour) based on precise astronomical solar-term boundaries rather than simple calendar dates, ensuring accuracy according to traditional Chinese astrological principles.
 
-Key features:
-- Swiss Ephemeris (pyswisseph) for Sun apparent longitude and solstice calculations
-- IANA timezone support with strict DST validation
-- Optional Local Mean Time (LMT) calculation based on longitude
-- Year boundary at LiChun (315° solar longitude)
-- Month boundaries from exact Jie solar term crossings (315° + 30°*k)
-- Day pillar from Julian Day Number (JDN) based sexagenary day index
-- Hour pillar from 2-hour branches with optional Zi hour day-boundary
-- Optional 24 solar terms computation for diagnostics and cross-validation
+### Key Features
 
-## Architecture
+- **Swiss Ephemeris Integration**: Uses pyswisseph for Sun apparent longitude and solstice calculations with high precision
+- **IANA Timezone Support**: With strict DST validation options for accurate time handling
+- **Flexible Time Standards**: Supports both CIVIL (modern timezones) and Local Mean Time (LMT) based on longitude
+- **Astronomical Boundaries**: 
+  - Year boundary at LiChun (Start of Spring, 315° solar longitude)
+  - Month boundaries from exact Jie solar term crossings (315° + 30°*k)
+  - Day pillar from Julian Day Number (JDN) based sexagenary day index
+  - Hour pillar from 2-hour branches with optional Zi hour day-boundary
+- **Fusion Astrology**: Advanced integration of Western and Chinese astrological systems
+- **Contract-first Validation**: API with JSON Schema validation for deterministic results
+- **Containerization**: Ready for deployment with Docker and Fly.io
 
-### Core Components
+### Architecture
+
+The engine consists of several core modules:
+
 1. **bazi.py** - Main calculation logic for the BaZi chart
 2. **types.py** - Data structures using TypedDict and dataclasses
 3. **constants.py** - Heavenly Stems and Earthly Branches definitions
@@ -26,15 +31,36 @@ Key features:
 7. **cli.py** - Command-line interface
 8. **app.py** - FastAPI web application
 9. **western.py** - Western astrology calculation (complementary features)
+10. **fusion.py** - Fusion astrology analysis combining Western and Chinese systems
 
-### Data Flow
-1. Input is parsed from local ISO date/time with timezone
-2. Time is converted to UTC and then to chart-local time
-3. Astronomical calculations determine exact solar term boundaries
-4. Pillars are calculated based on position relative to these boundaries
-5. Results include both the Four Pillars and diagnostic solar term information
+### Core Algorithms
+
+#### Year Pillar Calculation
+- Uses LiChun (Start of Spring) at 315° solar longitude as the year boundary
+- If birth date is before LiChun in the calendar year, the previous year's stem-branch is used
+- Calculated using astronomical position rather than lunar calendar
+
+#### Month Pillar Calculation
+- Uses Jie solar terms (12 of the 24 solar terms) as month boundaries
+- Each month begins at its respective Jie term
+- Formula: 315° + 30°*k where k = 0,1,2...11
+- Month stem is derived from year stem using traditional formula
+
+#### Day Pillar Calculation
+- Based on Julian Day Number converted to sexagenary cycle (60-day cycle)
+- Uses configurable day anchor (default: 1949-10-01 as Jia-Zi day)
+- Can be customized with different anchor dates for verification
+
+#### Hour Pillar Calculation
+- Based on 2-hour time periods (Earthly Branches)
+- Uses traditional Chinese hours (Zi, Chou, Yin, etc.)
+- Hour stem derived from day stem using traditional formula
 
 ## Building and Running
+
+### Prerequisites
+- Python 3.10+
+- Swiss Ephemeris files (automatically downloaded during installation)
 
 ### Installation
 ```bash
@@ -63,15 +89,6 @@ uvicorn bazi_engine.app:app --host 0.0.0.0 --port 8080
 python -m bazi_engine.app
 ```
 
-### Testing
-```bash
-# Run all tests
-pytest -q
-
-# Run specific test file
-pytest tests/test_golden_vectors.py
-```
-
 ### Docker Containerization
 ```bash
 # Build the image
@@ -81,28 +98,18 @@ docker build -t bazi_engine .
 docker run -p 8080:8080 bazi_engine
 ```
 
-## Key Algorithms
+## API Endpoints
 
-### Year Pillar Calculation
-- Uses LiChun (Start of Spring) at 315° solar longitude as the year boundary
-- If birth date is before LiChun in the calendar year, the previous year's stem-branch is used
-- Calculated using astronomical position rather than lunar calendar
-
-### Month Pillar Calculation
-- Uses Jie solar terms (12 of the 24 solar terms) as month boundaries
-- Each month begins at its respective Jie term
-- Formula: 315° + 30°*k where k = 0,1,2...11
-- Month stem is derived from year stem using traditional formula
-
-### Day Pillar Calculation
-- Based on Julian Day Number converted to sexagenary cycle (60-day cycle)
-- Uses configurable day anchor (default: 1949-10-01 as Jia-Zi day)
-- Can be customized with different anchor dates for verification
-
-### Hour Pillar Calculation
-- Based on 2-hour time periods (Earthly Branches)
-- Uses traditional Chinese hours (Zi, Chou, Yin, etc.)
-- Hour stem derived from day stem using traditional formula
+- `GET /` - Health check
+- `GET /health` - Health check
+- `POST /validate` - Contract-first validator endpoint
+- `POST /calculate/bazi` - Calculate BaZi chart
+- `POST /calculate/western` - Calculate Western astrology chart
+- `POST /calculate/fusion` - Fusion astrology analysis
+- `POST /calculate/wuxing` - Calculate Wu-Xing element vector
+- `POST /calculate/tst` - Calculate True Solar Time
+- `GET /info/wuxing-mapping` - Get planet to Wu-Xing element mapping
+- `POST /api/webhooks/chart` - ElevenLabs webhook for astrology charts
 
 ## Development Conventions
 
@@ -124,25 +131,37 @@ docker run -p 8080:8080 bazi_engine
 - `pytest` for testing
 - `skyfield` (optional) as alternative ephemeris backend
 
-## Version 0.2 Improvements
+## Fusion Astrology Features
 
-- DST safety checks for ambiguous/nonexistent local times (optional strict mode)
-- Full 24 solar terms computation for a year window (UTC + chart-local)
-- Caching hooks (extendable) + ephemeris path injection for Swiss Ephemeris
-- Skyfield adapter stub (optional dependency) + generic bisection fallback solver
-- Deterministic and test-first: golden vectors + invariants
+The engine includes advanced fusion astrology capabilities that combine Western and Chinese astrological systems:
 
-## API Endpoints
+- **Planet-to-Element Mapping**: Maps Western planets to Chinese Wu-Xing (Five Elements)
+- **Wu-Xing Vectors**: Represents elemental distributions as normalized vectors
+- **Harmony Index**: Calculates compatibility between Western and Chinese charts
+- **True Solar Time**: Accurate time calculations accounting for longitude and equation of time
+- **Elemental Comparison**: Detailed analysis of element strengths in both systems
 
-- `GET /` - Health check
-- `POST /calculate/bazi` - Calculate BaZi chart
-- `POST /calculate/western` - Calculate Western astrology chart
+## Deployment
 
-## Configuration
+The application is configured for deployment on Fly.io with the following specifications:
+- Primary region: fra (Frankfurt)
+- VM: 1 shared CPU, 256MB RAM
+- Auto-scaling enabled
+- HTTPS enforced
 
-The engine supports various options:
-- Timezone validation with optional strict mode
-- Choice between CIVIL and Local Mean Time (LMT)
-- Day boundary options (midnight vs Zi hour)
-- Custom day anchor for verification
-- Accuracy settings for iterative calculations
+## Performance
+
+The engine is optimized for performance with:
+- Efficient algorithms for astronomical calculations
+- Caching mechanisms for repeated queries
+- Asynchronous processing capabilities
+- Containerized deployment for consistent performance
+
+## Testing
+
+Run all tests:
+```bash
+pytest -q
+```
+
+The test suite includes golden vector tests with predetermined inputs and expected outputs to ensure calculation accuracy.

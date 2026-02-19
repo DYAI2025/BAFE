@@ -228,7 +228,8 @@ def validate_request(payload: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(positions_override, dict):
         bodies = positions_override.get("bodies") or {}
         if isinstance(bodies, dict) and "Sun" in bodies and isinstance(bodies["Sun"], dict):
-            lam = float(bodies["Sun"].get("lambda_deg"))
+            lam_raw = bodies["Sun"].get("lambda_deg")
+            lam = float(lam_raw) if lam_raw is not None else 0.0
             boundary_distance_deg = float(nearest_boundary_distance_deg(lam, zi_apex_deg=zi_apex_deg, branch_width_deg=branch_width_deg))
             classification_unstable = boundary_distance_deg < 0.1
     if boundary_distance_deg is None and tlst_hours is not None:
@@ -315,7 +316,7 @@ def validate_request(payload: Dict[str, Any]) -> Dict[str, Any]:
     # Self-check: response must validate against contract schema.
     resp_errs = list(_RESP_VALIDATOR.iter_errors(resp))
     if resp_errs:
-        e = sorted(resp_errs, key=lambda x: x.path)[0]
-        raise RuntimeError(f"ValidateResponse schema violation (BUG): {e.message} at {list(e.path)}")
+        first_err = sorted(resp_errs, key=lambda x: x.path)[0]
+        raise RuntimeError(f"ValidateResponse schema violation (BUG): {first_err.message} at {list(first_err.path)}")
 
     return resp
