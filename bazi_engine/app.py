@@ -22,7 +22,7 @@ from .fusion import (
     calculate_wuxing_from_bazi,
     calculate_harmony_index
 )
-from .time_utils import parse_local_iso
+from .time_utils import parse_local_iso, LocalTimeError
 from .bafe import validate_request as bafe_validate_request
 # Legacy ephemeris bootstrap removed: no implicit downloads at startup
 
@@ -558,8 +558,8 @@ async def elevenlabs_chart_webhook(
     datetime_str = f"{req.birthDate}T{birth_time}:00"
 
     try:
-        # Parse and calculate
-        dt = parse_local_iso(datetime_str, tz, strict=False, fold=0)
+        # Parse and calculate (strict=True to reject nonexistent DST gap times)
+        dt = parse_local_iso(datetime_str, tz, strict=True, fold=0)
         dt_utc = dt.astimezone(timezone.utc)
 
         # Calculate Western chart
@@ -584,7 +584,7 @@ async def elevenlabs_chart_webhook(
             latitude_deg=lat,
             time_standard="CIVIL",
             day_boundary="midnight",
-            strict_local_time=False,
+            strict_local_time=True,
             fold=0
         )
         bazi_result = compute_bazi(inp)
@@ -661,6 +661,15 @@ async def elevenlabs_chart_webhook(
             }
         }
 
+    except LocalTimeError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": str(e),
+                "hint": "The given birth time does not exist due to a DST transition. "
+                        "Please provide a valid local time.",
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
