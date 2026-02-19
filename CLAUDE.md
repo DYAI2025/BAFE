@@ -26,6 +26,10 @@ pytest -v                           # Verbose
 pytest tests/test_golden.py         # Golden vectors only
 pytest -k "test_name"               # Pattern matching
 
+# Lint & typecheck (CI uses these)
+ruff check bazi_engine/ --output-format=github
+mypy bazi_engine --ignore-missing-imports
+
 # Start API server
 uvicorn bazi_engine.app:app --reload
 
@@ -36,8 +40,8 @@ python -m bazi_engine.cli 2024-02-10T14:30:00 --json   # JSON output
 # Docker
 docker build -t bazi_engine . && docker run -p 8080:8080 bazi_engine
 
-# Deployment
-flyctl deploy
+# Deploy
+flyctl deploy                       # Fly.io (app: bafe-2u0e2a, region: ams)
 ```
 
 ## Architecture
@@ -119,15 +123,22 @@ Formula: `sexagenary_day_index = (JDN + 49) % 60`
 - Set via `SE_EPHE_PATH` env var or `ephe_path` parameter
 - Error "SwissEph file not found" = missing ephemeris data
 
-## Testing Strategy
+## Testing
 
-1. **Golden Vectors** (`tests/test_golden.py`) - Known correct pillar results
-2. **Extended Vectors** (`tests/test_golden_vectors.py`) - Edge cases (high latitude, LMT, zi boundary)
-3. **Invariants** (`tests/test_invariants.py`) - Structural properties (DAY_OFFSET validation)
-4. **API Tests** (`tests/test_api.py`) - Contract schema validation, mapping tests
-5. **Property Tests** (`tests/test_properties.py`) - Generative testing
+CI runs on Python 3.10, 3.11, 3.12. Tests skip gracefully if ephemeris files are missing.
 
-Tests skip gracefully if ephemeris files are missing (no implicit downloads).
+| Test File | What It Covers |
+|-----------|----------------|
+| `test_golden.py` | Known correct pillar results |
+| `test_golden_vectors.py` | Edge cases (high latitude, LMT, zi boundary) |
+| `test_invariants.py` | Structural properties (DAY_OFFSET validation) |
+| `test_api.py` | Contract schema validation, BAFE mapping |
+| `test_endpoints.py` | FastAPI endpoint integration |
+| `test_fusion.py` | Wu-Xing fusion analysis |
+| `test_properties.py` | Generative/property-based testing |
+| `test_time_utils.py` | DST, timezone edge cases |
+| `test_western.py` | Western chart calculations |
+| `test_constants.py` | Constants integrity |
 
 ## Code Conventions
 
