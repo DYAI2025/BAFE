@@ -276,9 +276,9 @@ class FusionRequest(BaseModel):
     lat: float = Field(..., description="Latitude in degrees")
     ambiguousTime: Literal["earlier", "later"] = "earlier"
     nonexistentTime: Literal["error", "shift_forward"] = "error"
-    bazi_pillars: Dict[str, Dict[str, str]] = Field(
-        ..., 
-        description="Ba Zi pillars from /calculate/bazi endpoint"
+    bazi_pillars: Optional[Dict[str, Dict[str, str]]] = Field(
+        None,
+        description="Ba Zi pillars (optional — computed automatically if omitted)"
     )
 
 class FusionResponse(BaseModel):
@@ -314,12 +314,34 @@ def calculate_fusion_endpoint(req: FusionRequest):
         # Get western chart
         western_chart = compute_western_chart(dt_utc, req.lat, req.lon)
 
+        # Compute BaZi pillars if not provided
+        pillars = req.bazi_pillars
+        if pillars is None:
+            fold = 0 if req.ambiguousTime == "earlier" else 1
+            inp = BaziInput(
+                birth_local=dt_local.replace(tzinfo=None).isoformat(),
+                timezone=req.tz,
+                longitude_deg=req.lon,
+                latitude_deg=req.lat,
+                time_standard="CIVIL",
+                day_boundary="midnight",
+                strict_local_time=True,
+                fold=fold,
+            )
+            bazi_result = compute_bazi(inp)
+            pillars = {
+                "year": format_pillar(bazi_result.pillars.year),
+                "month": format_pillar(bazi_result.pillars.month),
+                "day": format_pillar(bazi_result.pillars.day),
+                "hour": format_pillar(bazi_result.pillars.hour),
+            }
+
         # Compute fusion analysis
         fusion = compute_fusion_analysis(
             birth_utc_dt=dt_utc,
             latitude=req.lat,
             longitude=req.lon,
-            bazi_pillars=req.bazi_pillars,
+            bazi_pillars=pillars,
             western_bodies=western_chart["bodies"]
         )
         
