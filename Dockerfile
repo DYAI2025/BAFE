@@ -47,7 +47,16 @@ RUN pip install --no-deps .
 # Expose port
 EXPOSE 8080
 
-# Start with dynamic PORT support for Railway/Fly.io.
-# Use Python env parsing instead of shell expansion to avoid literal '${PORT:-8080}'
-# being passed to uvicorn when a platform runs the command without a shell.
-CMD ["python", "-c", "import os, uvicorn; uvicorn.run('bazi_engine.app:app', host='0.0.0.0', port=int(os.getenv('PORT', '8080')), log_level='info')"]
+# Create a dedicated startup script to handle PORT parsing and uvicorn startup.
+RUN cat << 'EOF' > /app/start.py
+import os
+import uvicorn
+
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", "8080"))
+    uvicorn.run("bazi_engine.app:app", host="0.0.0.0", port=port, log_level="info")
+EOF
+
+# Start the application using the dedicated startup script.
+CMD ["python", "start.py"]
