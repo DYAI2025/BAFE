@@ -31,13 +31,28 @@ _BUILD_VERSION = "1.0.0-rc1-20260220"
 
 
 def _build_metadata() -> Dict[str, str]:
-    """Expose deploy metadata to verify that docs belong to the latest build."""
-    return {
-        "version": _BUILD_VERSION,
-        "railway_commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA", "unknown"),
-        "railway_deploy_id": os.getenv("RAILWAY_DEPLOYMENT_ID", "unknown"),
-    }
+    """
+    Expose deploy metadata to verify that docs belong to the latest build.
 
+    By default, only the public version string is returned. Setting the
+    environment variable `EXPOSE_BUILD_METADATA` to a truthy value
+    ("1", "true", "yes", case-insensitive) will also expose deployment-
+    specific identifiers, which may be sensitive fingerprinting data on
+    internet-facing deployments.
+    """
+    metadata: Dict[str, str] = {"version": _BUILD_VERSION}
+
+    expose_extra = os.getenv("EXPOSE_BUILD_METADATA", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+    if expose_extra:
+        metadata["railway_commit_sha"] = os.getenv("RAILWAY_GIT_COMMIT_SHA", "unknown")
+        metadata["railway_deploy_id"] = os.getenv("RAILWAY_DEPLOYMENT_ID", "unknown")
+
+    return metadata
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import logging
