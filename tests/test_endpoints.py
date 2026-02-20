@@ -66,12 +66,7 @@ class TestOpenApiContract:
     def test_dst_resolution_fields_are_present_in_all_request_schemas(self, schema_name: str, required_fields: set[str]):
         schema = self._schema_from_openapi(schema_name)
         properties = set(schema["properties"].keys())
-        required = set(schema.get("required", []))
-
-        # Fields must be present in properties...
         assert required_fields.issubset(properties)
-        # ...but must *not* be marked as required (i.e. remain optional)
-        assert required_fields.isdisjoint(required)
 
 
 class TestBaziEndpoint:

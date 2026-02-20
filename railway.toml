@@ -4,7 +4,7 @@ dockerfilePath = "Dockerfile"
 noCache = true
 
 [deploy]
-startCommand = "uvicorn bazi_engine.app:app --host 0.0.0.0 --port ${PORT:-8080} --log-level info"
+startCommand = "python -c \"import os, uvicorn; uvicorn.run('bazi_engine.app:app', host='0.0.0.0', port=int(os.getenv('PORT', '8080')), log_level='info')\""
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
