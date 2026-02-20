@@ -27,10 +27,12 @@ from .bafe import validate_request as bafe_validate_request
 # Legacy ephemeris bootstrap removed: no implicit downloads at startup
 
 
+_BUILD_VERSION = "1.0.0-rc1-20260219"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Contract-first / deterministic: no implicit network calls or downloads at startup.
-    # RefData provisioning must be explicit (mounted or provided as offline packs).
+    import logging
+    logging.getLogger("uvicorn").info(f"BAFE starting: {_BUILD_VERSION}")
     yield
 
 
@@ -134,7 +136,7 @@ class WesternRequest(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "service": "bazi_engine_v2", "version": "1.0.0-rc1"}
+    return {"status": "ok", "service": "bazi_engine_v2", "version": _BUILD_VERSION}
 
 @app.get("/health")
 def health_check():
