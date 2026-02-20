@@ -25,6 +25,54 @@ class TestHealthEndpoints:
         assert r.status_code == 200
         assert r.json()["status"] == "healthy"
 
+    def test_build_returns_deploy_metadata(self):
+        r = client.get("/build")
+        assert r.status_code == 200
+        data = r.json()
+        assert "version" in data
+        assert "railway_commit_sha" in data
+        assert "railway_deploy_id" in data
+
+    def test_openapi_reports_current_build_version(self):
+        r = client.get("/openapi.json")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["info"]["version"] == client.get("/build").json()["version"]
+
+
+class TestOpenApiContract:
+    """Guardrails for fields that must stay visible in /docs."""
+
+    @staticmethod
+    def _schema_from_openapi(schema_name: str) -> dict:
+        spec = client.get("/openapi.json").json()
+        return spec["components"]["schemas"][schema_name]
+
+    def test_fusion_request_has_optional_bazi_pillars(self):
+        schema = self._schema_from_openapi("FusionRequest")
+        assert "bazi_pillars" in schema["properties"]
+        assert "bazi_pillars" not in schema.get("required", [])
+
+    @pytest.mark.parametrize(
+        ("schema_name", "required_fields"),
+        [
+            ("BaziRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("WesternRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("FusionRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("WxRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("TSTRequest", {"ambiguousTime", "nonexistentTime"}),
+        ],
+    )
+    def test_dst_resolution_fields_are_present_in_all_request_schemas(self, schema_name: str, required_fields: set[str]):
+        schema = self._schema_from_openapi(schema_name)
+        properties = set(schema["properties"].keys())
+        required = set(schema.get("required", []))
+
+        # Fields must be present in properties...
+        assert required_fields.issubset(properties)
+        # ...but must *not* be marked as required (i.e. remain optional)
+        assert required_fields.isdisjoint(required)
+
 
 class TestBaziEndpoint:
     """Tests for /calculate/bazi endpoint."""
