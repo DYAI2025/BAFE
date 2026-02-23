@@ -191,9 +191,9 @@ class TestChartDSTHandling:
 class TestChartValidationEmbed:
     """Test include_validation flag."""
 
-    def test_validation_absent_by_default(self):
+    def test_validation_null_by_default(self):
         data = client.post("/chart", json=BERLIN_PAYLOAD).json()
-        assert "validation" not in data
+        assert data.get("validation") is None
 
     def test_validation_present_when_requested(self):
         payload = {**BERLIN_PAYLOAD, "include_validation": True}
@@ -201,6 +201,39 @@ class TestChartValidationEmbed:
         assert "validation" in data
         # Should be a dict (validation response or error)
         assert isinstance(data["validation"], dict)
+
+
+class TestChartWuXing:
+    """Test Wu-Xing distribution in /chart response."""
+
+    def test_wuxing_present(self):
+        data = client.post("/chart", json=BERLIN_PAYLOAD).json()
+        assert "wuxing" in data
+
+    def test_wuxing_has_from_planets(self):
+        wx = client.post("/chart", json=BERLIN_PAYLOAD).json()["wuxing"]
+        fp = wx["from_planets"]
+        for key in ["Holz", "Feuer", "Erde", "Metall", "Wasser"]:
+            assert key in fp
+            assert isinstance(fp[key], (int, float))
+
+    def test_wuxing_has_from_bazi(self):
+        wx = client.post("/chart", json=BERLIN_PAYLOAD).json()["wuxing"]
+        fb = wx["from_bazi"]
+        for key in ["Holz", "Feuer", "Erde", "Metall", "Wasser"]:
+            assert key in fb
+            assert isinstance(fb[key], (int, float))
+
+    def test_wuxing_harmony_index_range(self):
+        wx = client.post("/chart", json=BERLIN_PAYLOAD).json()["wuxing"]
+        h = wx["harmony_index"]
+        assert 0.0 <= h <= 1.0
+
+    def test_wuxing_dominant_elements(self):
+        wx = client.post("/chart", json=BERLIN_PAYLOAD).json()["wuxing"]
+        valid = {"Holz", "Feuer", "Erde", "Metall", "Wasser"}
+        assert wx["dominant_planet"] in valid
+        assert wx["dominant_bazi"] in valid
 
 
 class TestChartBaziOptions:
