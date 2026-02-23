@@ -9,7 +9,7 @@ from .time_utils import parse_local_iso, to_chart_local, apply_day_boundary
 from .ephemeris import SwissEphBackend, datetime_utc_to_jd_ut, jd_ut_to_datetime_utc
 from .jieqi import compute_month_boundaries_from_lichun, compute_24_solar_terms_for_window
 
-from .constants import STEMS, BRANCHES, DAY_OFFSET
+from .constants import DAY_OFFSET
 
 def jdn_gregorian(y: int, m: int, d: int) -> int:
     a = (14 - m) // 12

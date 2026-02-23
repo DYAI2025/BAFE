@@ -5,9 +5,9 @@ import hashlib
 import time
 from fastapi import FastAPI, HTTPException, Query, Request, Header
 from pydantic import BaseModel, Field
-from typing import Optional, Literal, Dict, Any, List
-from datetime import datetime, timezone
-from .types import BaziInput, Pillar
+from typing import Optional, Literal, Dict, Any, List, cast
+from datetime import timezone
+from .types import BaziInput, Pillar, Fold
 from .constants import STEMS, BRANCHES, ANIMALS
 from .bazi import compute_bazi
 from .western import compute_western_chart
@@ -15,12 +15,9 @@ from .fusion import (
     compute_fusion_analysis,
     PLANET_TO_WUXING,
     WUXING_ORDER,
-    WuXingVector,
     equation_of_time,
     true_solar_time,
     calculate_wuxing_vector_from_planets,
-    calculate_wuxing_from_bazi,
-    calculate_harmony_index
 )
 from .time_utils import resolve_local_iso, LocalTimeError, AmbiguousTimeChoice, NonexistentTimePolicy
 from .bafe import validate_request as bafe_validate_request
@@ -28,15 +25,6 @@ from .bafe import validate_request as bafe_validate_request
 
 
 _BUILD_VERSION = "1.0.0-rc1-20260220"
-
-
-def _build_metadata() -> Dict[str, str]:
-    """Expose deploy metadata to verify that docs belong to the latest build."""
-    return {
-        "version": _BUILD_VERSION,
-        "railway_commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA", "unknown"),
-        "railway_deploy_id": os.getenv("RAILWAY_DEPLOYMENT_ID", "unknown"),
-    }
 
 
 def _build_metadata() -> Dict[str, str]:
@@ -193,7 +181,7 @@ async def validate(payload: Dict[str, Any]):
     except ValueError as e:
         # Request schema violation or invalid configuration
         raise HTTPException(status_code=422, detail=str(e))
-    except Exception as e:
+    except Exception:
         # Do not leak internals by default
         raise HTTPException(status_code=500, detail="Internal validation error")
 
@@ -252,7 +240,7 @@ def calculate_bazi_endpoint(req: BaziRequest):
             ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
         )
         resolved_naive = dt_local.replace(tzinfo=None).isoformat()
-        fold = 0 if req.ambiguousTime == "earlier" else 1
+        fold: Fold = 0 if req.ambiguousTime == "earlier" else 1
         inp = BaziInput(
             birth_local=resolved_naive,
             timezone=req.tz,
@@ -359,7 +347,7 @@ def calculate_fusion_endpoint(req: FusionRequest):
         # Compute BaZi pillars if not provided
         pillars = req.bazi_pillars
         if pillars is None:
-            fold = 0 if req.ambiguousTime == "earlier" else 1
+            fold: Fold = 0 if req.ambiguousTime == "earlier" else 1
             inp = BaziInput(
                 birth_local=dt_local.replace(tzinfo=None).isoformat(),
                 timezone=req.tz,
@@ -641,7 +629,7 @@ def chart_endpoint(req: ChartRequest):
             })
 
         # ── BaZi pillars ──
-        fold = 0 if ambiguous == "earlier" else 1
+        fold: Fold = 0 if ambiguous == "earlier" else 1
         bazi_input = BaziInput(
             birth_local=dt.replace(tzinfo=None).isoformat(),
             timezone=req.tz_id,
@@ -946,7 +934,7 @@ async def elevenlabs_chart_webhook(
             time_standard="CIVIL",
             day_boundary="midnight",
             strict_local_time=True,
-            fold=time_res.fold,
+            fold=cast(Fold, time_res.fold),
         )
         bazi_result = compute_bazi(inp)
 

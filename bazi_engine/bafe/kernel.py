@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from math import cos, exp, pi, radians
+from math import cos, exp, radians
 from typing import List, Dict, Any
 
 from .mapping import wrap180

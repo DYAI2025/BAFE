@@ -25,7 +25,14 @@ class TestHealthEndpoints:
         assert r.status_code == 200
         assert r.json()["status"] == "healthy"
 
-    def test_build_returns_deploy_metadata(self):
+    def test_build_returns_version(self):
+        r = client.get("/build")
+        assert r.status_code == 200
+        data = r.json()
+        assert "version" in data
+
+    def test_build_returns_deploy_metadata_when_exposed(self, monkeypatch):
+        monkeypatch.setenv("EXPOSE_BUILD_METADATA", "1")
         r = client.get("/build")
         assert r.status_code == 200
         data = r.json()
