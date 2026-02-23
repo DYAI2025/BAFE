@@ -18,6 +18,8 @@ from .fusion import (
     equation_of_time,
     true_solar_time,
     calculate_wuxing_vector_from_planets,
+    calculate_wuxing_from_bazi,
+    calculate_harmony_index,
 )
 from .time_utils import resolve_local_iso, LocalTimeError, AmbiguousTimeChoice, NonexistentTimePolicy
 from .bafe import validate_request as bafe_validate_request
@@ -564,6 +566,89 @@ class ChartRequest(BaseModel):
     day_boundary: Literal["midnight", "zi"] = Field("midnight", description="Day change policy for BaZi")
 
 
+# ── Response models (visible in /docs) ──
+
+class TimeScaleQuality(BaseModel):
+    tlst: str = Field(..., description="True Local Solar Time quality: 'ok' or diagnostic")
+
+class TimeScales(BaseModel):
+    utc: str = Field(..., description="UTC datetime ISO 8601")
+    civil_local: str = Field(..., description="Civil local datetime ISO 8601 with offset")
+    jd_ut: float = Field(..., description="Julian Day (UT)")
+    tlst_hours: float = Field(..., description="True Local Solar Time in decimal hours")
+    eot_min: float = Field(..., description="Equation of Time in minutes")
+    dst_status: str = Field(..., description="DST resolution status: 'ok', 'shifted', etc.")
+    dst_fold: int = Field(..., description="DST fold value (0 or 1)")
+    tz_abbrev: str = Field(..., description="Timezone abbreviation (e.g. CEST, CET)")
+    quality: TimeScaleQuality
+
+class Position(BaseModel):
+    name: str = Field(..., description="Body name (Sun, Moon, Mercury, ...)")
+    longitude_deg: Optional[float] = Field(None, description="Ecliptic longitude 0-360°")
+    latitude_deg: Optional[float] = Field(None, description="Ecliptic latitude in degrees")
+    speed_deg_per_day: Optional[float] = Field(None, description="Daily speed in degrees")
+    distance_au: Optional[float] = Field(None, description="Distance in AU")
+    is_retrograde: bool = Field(False, description="True if body is retrograde")
+    sign_index: int = Field(..., description="Zodiac sign index 0-11 (Aries=0)")
+    sign_name: str = Field(..., description="English zodiac sign name")
+    sign_name_de: str = Field(..., description="German zodiac sign name")
+    degree_in_sign: Optional[float] = Field(None, description="Degree within the sign 0-30°")
+
+class PillarSpec(BaseModel):
+    stem_index: int = Field(..., description="Heavenly Stem index 0-9")
+    branch_index: int = Field(..., description="Earthly Branch index 0-11")
+    stem: str = Field(..., description="Heavenly Stem name (Jia, Yi, Bing, ...)")
+    branch: str = Field(..., description="Earthly Branch name (Zi, Chou, Yin, ...)")
+    animal: str = Field(..., description="Chinese zodiac animal (Rat, Ox, Tiger, ...)")
+    element: str = Field(..., description="Wu-Xing element of the stem (Holz, Feuer, Erde, Metall, Wasser)")
+
+class BaziPillars(BaseModel):
+    year: PillarSpec
+    month: PillarSpec
+    day: PillarSpec
+    hour: PillarSpec
+
+class BaziDates(BaseModel):
+    birth_local: str = Field(..., description="Local birth datetime ISO 8601")
+    birth_utc: str = Field(..., description="UTC birth datetime ISO 8601")
+    lichun_local: str = Field(..., description="LiChun (Start of Spring) local ISO 8601")
+
+class BaziSection(BaseModel):
+    ruleset_id: str = Field(..., description="BaZi ruleset identifier")
+    pillars: BaziPillars
+    day_master: str = Field(..., description="Day Master Heavenly Stem (e.g. Geng)")
+    dates: BaziDates
+
+class WuXingDistribution(BaseModel):
+    Holz: float = Field(..., description="Wood (木) element score")
+    Feuer: float = Field(..., description="Fire (火) element score")
+    Erde: float = Field(..., description="Earth (土) element score")
+    Metall: float = Field(..., description="Metal (金) element score")
+    Wasser: float = Field(..., description="Water (水) element score")
+
+class WuXingSection(BaseModel):
+    from_planets: WuXingDistribution = Field(..., description="Wu-Xing vector derived from planetary positions")
+    from_bazi: WuXingDistribution = Field(..., description="Wu-Xing vector derived from BaZi stems and hidden branch elements")
+    harmony_index: float = Field(..., description="Cosine similarity between planetary and BaZi Wu-Xing vectors (0-1)")
+    dominant_planet: str = Field(..., description="Strongest element from planetary Wu-Xing")
+    dominant_bazi: str = Field(..., description="Strongest element from BaZi Wu-Xing")
+
+class ValidationResult(BaseModel):
+    ok: bool = Field(..., description="Whether validation passed")
+    error: Optional[str] = Field(None, description="Error message if validation failed")
+
+class ChartResponse(BaseModel):
+    engine_version: str = Field(..., description="Engine build version")
+    parameter_set_id: str = Field(..., description="Parameter set identifier")
+    time_scales: TimeScales
+    positions: List[Position] = Field(..., description="Western planetary positions")
+    bazi: BaziSection = Field(..., description="Four Pillars of Destiny")
+    wuxing: WuXingSection = Field(..., description="Wu-Xing (Five Elements) distribution and harmony")
+    houses: Dict[str, float] = Field(..., description="House cusps 1-12 in degrees (Placidus)")
+    angles: Dict[str, float] = Field(..., description="Chart angles: Ascendant, MC, Vertex in degrees")
+    validation: Optional[ValidationResult] = Field(None, description="Contract validation result (only if include_validation=true)")
+
+
 def _format_pillar_spec(pillar: Pillar) -> Dict[str, Any]:
     """Format a BaZi pillar in spec-aligned structure."""
     stem = STEMS[pillar.stem_index]
@@ -578,7 +663,7 @@ def _format_pillar_spec(pillar: Pillar) -> Dict[str, Any]:
     }
 
 
-@app.post("/chart")
+@app.post("/chart", response_model=ChartResponse)
 def chart_endpoint(req: ChartRequest):
     """
     Combined chart: Western positions + BaZi pillars + time scales.
@@ -658,6 +743,33 @@ def chart_endpoint(req: ChartRequest):
             },
         }
 
+        # ── Wu-Xing distribution ──
+        wuxing_planet = calculate_wuxing_vector_from_planets(bodies_raw)
+        bazi_pillars_for_wuxing = {
+            "year": {"stem": STEMS[bazi_result.pillars.year.stem_index],
+                     "branch": BRANCHES[bazi_result.pillars.year.branch_index]},
+            "month": {"stem": STEMS[bazi_result.pillars.month.stem_index],
+                      "branch": BRANCHES[bazi_result.pillars.month.branch_index]},
+            "day": {"stem": STEMS[bazi_result.pillars.day.stem_index],
+                    "branch": BRANCHES[bazi_result.pillars.day.branch_index]},
+            "hour": {"stem": STEMS[bazi_result.pillars.hour.stem_index],
+                     "branch": BRANCHES[bazi_result.pillars.hour.branch_index]},
+        }
+        wuxing_bazi = calculate_wuxing_from_bazi(bazi_pillars_for_wuxing)
+        harmony_result = calculate_harmony_index(wuxing_planet, wuxing_bazi)
+
+        element_names = ["Holz", "Feuer", "Erde", "Metall", "Wasser"]
+        dominant_planet = element_names[wuxing_planet.to_list().index(max(wuxing_planet.to_list()))]
+        dominant_bazi = element_names[wuxing_bazi.to_list().index(max(wuxing_bazi.to_list()))]
+
+        wuxing_section = {
+            "from_planets": wuxing_planet.to_dict(),
+            "from_bazi": wuxing_bazi.to_dict(),
+            "harmony_index": harmony_result["harmony_index"],
+            "dominant_planet": dominant_planet,
+            "dominant_bazi": dominant_bazi,
+        }
+
         # ── Time scales (spec 12.3) ──
         day_of_year = dt.timetuple().tm_yday
         civil_hours = dt.hour + dt.minute / 60 + dt.second / 3600
@@ -706,6 +818,7 @@ def chart_endpoint(req: ChartRequest):
             "time_scales": time_scales,
             "positions": positions,
             "bazi": bazi_section,
+            "wuxing": wuxing_section,
             "houses": western.get("houses"),
             "angles": western.get("angles"),
         }
