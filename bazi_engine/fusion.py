@@ -2,9 +2,9 @@
 # Implements: Planet-to-Element mapping, Wu-Xing vectors, Harmony Index
 
 from __future__ import annotations
-from typing import Dict, List, Tuple, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
-from math import sin, cos, radians, degrees, pi, sqrt, floor
+from math import sin, cos, radians, pi, sqrt
 
 # =============================================================================
 # PLANET → WU-XING ELEMENT MAPPING

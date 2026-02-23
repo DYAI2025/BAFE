@@ -5,9 +5,9 @@ import hashlib
 import time
 from fastapi import FastAPI, HTTPException, Query, Request, Header
 from pydantic import BaseModel, Field
-from typing import Optional, Literal, Dict, Any, List
-from datetime import datetime, timezone
-from .types import BaziInput, Pillar
+from typing import Optional, Literal, Dict, Any, List, cast
+from datetime import timezone
+from .types import BaziInput, Pillar, Fold
 from .constants import STEMS, BRANCHES, ANIMALS
 from .bazi import compute_bazi
 from .western import compute_western_chart
@@ -15,28 +15,16 @@ from .fusion import (
     compute_fusion_analysis,
     PLANET_TO_WUXING,
     WUXING_ORDER,
-    WuXingVector,
     equation_of_time,
     true_solar_time,
     calculate_wuxing_vector_from_planets,
-    calculate_wuxing_from_bazi,
-    calculate_harmony_index
 )
-from .time_utils import resolve_local_iso, LocalTimeError
+from .time_utils import resolve_local_iso, LocalTimeError, AmbiguousTimeChoice, NonexistentTimePolicy
 from .bafe import validate_request as bafe_validate_request
 # Legacy ephemeris bootstrap removed: no implicit downloads at startup
 
 
 _BUILD_VERSION = "1.0.0-rc1-20260220"
-
-
-def _build_metadata() -> Dict[str, str]:
-    """Expose deploy metadata to verify that docs belong to the latest build."""
-    return {
-        "version": _BUILD_VERSION,
-        "railway_commit_sha": os.getenv("RAILWAY_GIT_COMMIT_SHA", "unknown"),
-        "railway_deploy_id": os.getenv("RAILWAY_DEPLOYMENT_ID", "unknown"),
-    }
 
 
 def _build_metadata() -> Dict[str, str]:
@@ -193,7 +181,7 @@ async def validate(payload: Dict[str, Any]):
     except ValueError as e:
         # Request schema violation or invalid configuration
         raise HTTPException(status_code=422, detail=str(e))
-    except Exception as e:
+    except Exception:
         # Do not leak internals by default
         raise HTTPException(status_code=500, detail="Internal validation error")
 
@@ -252,7 +240,7 @@ def calculate_bazi_endpoint(req: BaziRequest):
             ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
         )
         resolved_naive = dt_local.replace(tzinfo=None).isoformat()
-        fold = 0 if req.ambiguousTime == "earlier" else 1
+        fold: Fold = 0 if req.ambiguousTime == "earlier" else 1
         inp = BaziInput(
             birth_local=resolved_naive,
             timezone=req.tz,
@@ -359,7 +347,7 @@ def calculate_fusion_endpoint(req: FusionRequest):
         # Compute BaZi pillars if not provided
         pillars = req.bazi_pillars
         if pillars is None:
-            fold = 0 if req.ambiguousTime == "earlier" else 1
+            fold: Fold = 0 if req.ambiguousTime == "earlier" else 1
             inp = BaziInput(
                 birth_local=dt_local.replace(tzinfo=None).isoformat(),
                 timezone=req.tz,
@@ -543,6 +531,202 @@ def get_wuxing_mapping():
             "WUXING_ORDER": "Wu Xing cycle order: Holz -> Feuer -> Erde -> Metall -> Wasser"
         }
     }
+
+
+# =============================================================================
+# COMBINED CHART ENDPOINT (POST /chart)
+# Spec: bazodiac_spec_master.md section 12
+# =============================================================================
+
+ZODIAC_SIGNS_EN = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]
+
+
+class ChartRequest(BaseModel):
+    local_datetime: str = Field(..., description="ISO 8601 local datetime (e.g. 2024-02-10T14:30:00)")
+    tz_id: str = Field("Europe/Berlin", description="IANA timezone name")
+    geo_lon_deg: float = Field(13.4050, description="Geographic longitude in degrees")
+    geo_lat_deg: float = Field(52.5200, description="Geographic latitude in degrees")
+    dst_policy: Literal["error", "earlier", "later"] = Field(
+        "error",
+        description="DST handling: 'error' rejects nonexistent times, "
+                    "'earlier'/'later' choose fold for ambiguous and shift_forward for gaps",
+    )
+    bodies: Optional[List[str]] = Field(
+        None,
+        description="Western bodies to include (default: all available). "
+                    "E.g. ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn']",
+    )
+    include_validation: bool = Field(False, description="Embed /validate result in response")
+    time_standard: Literal["CIVIL", "LMT"] = Field("CIVIL", description="Time standard for BaZi calculation")
+    day_boundary: Literal["midnight", "zi"] = Field("midnight", description="Day change policy for BaZi")
+
+
+def _format_pillar_spec(pillar: Pillar) -> Dict[str, Any]:
+    """Format a BaZi pillar in spec-aligned structure."""
+    stem = STEMS[pillar.stem_index]
+    branch = BRANCHES[pillar.branch_index]
+    return {
+        "stem_index": pillar.stem_index,
+        "branch_index": pillar.branch_index,
+        "stem": stem,
+        "branch": branch,
+        "animal": ANIMALS[pillar.branch_index],
+        "element": STEM_TO_ELEMENT[stem],
+    }
+
+
+@app.post("/chart")
+def chart_endpoint(req: ChartRequest):
+    """
+    Combined chart: Western positions + BaZi pillars + time scales.
+
+    Returns Sun/Moon zodiac signs, all planetary positions, four BaZi pillars,
+    and time-scale diagnostics in a single call. Spec reference:
+    bazodiac_spec_master.md section 12.2/12.3.
+    """
+    try:
+        # Map dst_policy to existing resolve_local_iso parameters
+        if req.dst_policy == "error":
+            ambiguous: AmbiguousTimeChoice = "earlier"
+            nonexistent: NonexistentTimePolicy = "error"
+        elif req.dst_policy == "earlier":
+            ambiguous = "earlier"
+            nonexistent = "shift_forward"
+        else:
+            ambiguous = "later"
+            nonexistent = "shift_forward"
+
+        dt, time_res = resolve_local_iso(
+            req.local_datetime, req.tz_id,
+            ambiguous=ambiguous, nonexistent=nonexistent,
+        )
+        dt_utc = dt.astimezone(timezone.utc)
+
+        # ── Western chart ──
+        western = compute_western_chart(dt_utc, req.geo_lat_deg, req.geo_lon_deg)
+        bodies_raw = western.get("bodies", {})
+
+        # Build positions list (spec 12.3: positions array)
+        positions = []
+        for name, body in bodies_raw.items():
+            if req.bodies and name not in req.bodies:
+                continue
+            sign_idx = int(body.get("zodiac_sign", 0))
+            positions.append({
+                "name": name,
+                "longitude_deg": body.get("longitude"),
+                "latitude_deg": body.get("latitude"),
+                "speed_deg_per_day": body.get("speed"),
+                "distance_au": body.get("distance"),
+                "is_retrograde": body.get("is_retrograde", False),
+                "sign_index": sign_idx,
+                "sign_name": ZODIAC_SIGNS_EN[sign_idx],
+                "sign_name_de": ZODIAC_SIGNS_DE[sign_idx],
+                "degree_in_sign": body.get("degree_in_sign"),
+            })
+
+        # ── BaZi pillars ──
+        fold: Fold = 0 if ambiguous == "earlier" else 1
+        bazi_input = BaziInput(
+            birth_local=dt.replace(tzinfo=None).isoformat(),
+            timezone=req.tz_id,
+            longitude_deg=req.geo_lon_deg,
+            latitude_deg=req.geo_lat_deg,
+            time_standard=req.time_standard,
+            day_boundary=req.day_boundary,
+            strict_local_time=True,
+            fold=fold,
+        )
+        bazi_result = compute_bazi(bazi_input)
+
+        bazi_section = {
+            "ruleset_id": "standard_bazi_2026",
+            "pillars": {
+                "year": _format_pillar_spec(bazi_result.pillars.year),
+                "month": _format_pillar_spec(bazi_result.pillars.month),
+                "day": _format_pillar_spec(bazi_result.pillars.day),
+                "hour": _format_pillar_spec(bazi_result.pillars.hour),
+            },
+            "day_master": STEMS[bazi_result.pillars.day.stem_index],
+            "dates": {
+                "birth_local": bazi_result.birth_local_dt.isoformat(),
+                "birth_utc": bazi_result.birth_utc_dt.isoformat(),
+                "lichun_local": bazi_result.lichun_local_dt.isoformat(),
+            },
+        }
+
+        # ── Time scales (spec 12.3) ──
+        day_of_year = dt.timetuple().tm_yday
+        civil_hours = dt.hour + dt.minute / 60 + dt.second / 3600
+        eot_min = equation_of_time(day_of_year)
+        tst_hours = true_solar_time(civil_hours, req.geo_lon_deg, day_of_year)
+
+        time_scales = {
+            "utc": time_res.resolved_utc_iso,
+            "civil_local": time_res.resolved_local_iso,
+            "jd_ut": western.get("jd_ut"),
+            "tlst_hours": round(tst_hours, 6),
+            "eot_min": round(eot_min, 4),
+            "dst_status": time_res.status,
+            "dst_fold": time_res.fold,
+            "tz_abbrev": time_res.tz_abbrev,
+            "quality": {
+                "tlst": "ok",
+            },
+        }
+
+        # ── Validation (optional embed) ──
+        validation = None
+        if req.include_validation:
+            validate_payload = {
+                "engine_config": {
+                    "branch_coordinate_convention": "SHIFT_BOUNDARIES",
+                    "zi_apex_deg": 270.0,
+                    "branch_width_deg": 30.0,
+                },
+                "birth_event": {
+                    "local_datetime": req.local_datetime,
+                    "tz_id": req.tz_id,
+                    "geo_lon_deg": req.geo_lon_deg,
+                    "geo_lat_deg": req.geo_lat_deg,
+                },
+            }
+            try:
+                validation = bafe_validate_request(validate_payload)
+            except Exception:
+                validation = {"ok": False, "error": "Validation unavailable"}
+
+        # ── Assemble response ──
+        response: Dict[str, Any] = {
+            "engine_version": _BUILD_VERSION,
+            "parameter_set_id": "pz_2026_02_core",
+            "time_scales": time_scales,
+            "positions": positions,
+            "bazi": bazi_section,
+            "houses": western.get("houses"),
+            "angles": western.get("angles"),
+        }
+
+        if validation is not None:
+            response["validation"] = validation
+
+        return response
+
+    except LocalTimeError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": str(e),
+                "type": "dst_error",
+                "hint": "The given local time does not exist due to a DST transition. "
+                        "Use dst_policy='earlier' or 'later' to auto-resolve.",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # =============================================================================
@@ -750,7 +934,7 @@ async def elevenlabs_chart_webhook(
             time_standard="CIVIL",
             day_boundary="midnight",
             strict_local_time=True,
-            fold=time_res.fold,
+            fold=cast(Fold, time_res.fold),
         )
         bazi_result = compute_bazi(inp)
 

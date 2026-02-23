@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from jsonschema import Draft7Validator
 
@@ -16,9 +15,7 @@ from .canonical_json import config_fingerprint as compute_fingerprint
 from .mapping import (
     branch_index_shift_boundaries,
     branch_index_shift_longitudes,
-    branch_index_shift_longitudes_misused,
     nearest_boundary_distance_deg,
-    hour_branch_index_from_tlst,
     nearest_hour_boundary_distance_minutes,
 )
 
