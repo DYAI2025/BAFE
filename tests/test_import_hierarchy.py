@@ -39,6 +39,11 @@ LAYERS: Dict[str, int] = {
     "bazi":        4,
     "western":     4,
     "fusion":      4,
+    # wuxing sub-modules are Level 4 peers of fusion
+    "wuxing":                4,
+    "wuxing.constants":      4,
+    "wuxing.vector":         4,
+    "wuxing.analysis":       4,
     "app":         5,
     "cli":         5,
     # bafe sub-modules all live at Layer 5
