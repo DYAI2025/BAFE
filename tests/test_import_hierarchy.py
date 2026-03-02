@@ -45,6 +45,15 @@ LAYERS: Dict[str, int] = {
     "wuxing.vector":         4,
     "wuxing.analysis":       4,
     "wuxing.zones":          4,
+    "wuxing.calibration":    4,
+    # phases — Level 2 (pure computation, no domain imports upward)
+    "phases":                2,
+    "phases.jieqi_phase":    2,
+    "phases.lunar_phase":    2,
+    # research — Level 5 (imports from all lower levels for analysis)
+    "research":              5,
+    "research.dataset_generator": 5,
+    "research.pattern_analysis":  5,
     "app":         5,
     "cli":         5,
     # bafe sub-modules all live at Layer 5
