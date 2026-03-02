@@ -4,6 +4,7 @@ import hmac
 import hashlib
 import time
 from fastapi import FastAPI, HTTPException, Query, Request, Header
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Literal, Dict, Any, List, cast
 from datetime import timezone
@@ -23,6 +24,7 @@ from .fusion import (
 )
 from .time_utils import resolve_local_iso, LocalTimeError, AmbiguousTimeChoice, NonexistentTimePolicy
 from .bafe import validate_request as bafe_validate_request
+from .exc import BaziEngineError, InputError, EphemerisUnavailableError, CalculationError, NotSupportedError
 # Legacy ephemeris bootstrap removed: no implicit downloads at startup
 
 
@@ -65,6 +67,35 @@ app = FastAPI(
     version=_BUILD_VERSION,
     lifespan=lifespan
 )
+
+
+# ── Global exception handlers ─────────────────────────────────────────────────
+# These replace the per-endpoint `except Exception → HTTP 400` pattern.
+# Each exception type maps to a semantically correct HTTP status code.
+
+@app.exception_handler(BaziEngineError)
+async def bazi_engine_error_handler(request: Request, exc: BaziEngineError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.http_status,
+        content=exc.to_dict(),
+    )
+
+@app.exception_handler(EphemerisUnavailableError)
+async def ephemeris_error_handler(request: Request, exc: EphemerisUnavailableError) -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        content=exc.to_dict(),
+    )
+
+# Fallback: plain FileNotFoundError from ephemeris (before exc.py existed)
+@app.exception_handler(FileNotFoundError)
+async def file_not_found_handler(request: Request, exc: FileNotFoundError) -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        content={"error": "ephemeris_unavailable", "message": str(exc), "detail": {}},
+    )
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 ZODIAC_SIGNS_DE = [
     "Widder",
@@ -231,8 +262,10 @@ def api_endpoint(
                 "lon": lon,
             },
         }
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 @app.post("/calculate/bazi")
 def calculate_bazi_endpoint(req: BaziRequest):
@@ -280,8 +313,10 @@ def calculate_bazi_endpoint(req: BaziRequest):
             },
             "solar_terms_count": len(res.solar_terms_local_dt) if res.solar_terms_local_dt else 0
         }
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 @app.post("/calculate/western")
 def calculate_western_endpoint(req: WesternRequest):
@@ -294,8 +329,10 @@ def calculate_western_endpoint(req: WesternRequest):
         
         chart = compute_western_chart(dt_utc, req.lat, req.lon)
         return chart
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 # =============================================================================
 # FUSION ASTROLOGY ENDPOINTS
@@ -390,8 +427,10 @@ def calculate_fusion_endpoint(req: FusionRequest):
             "cosmic_state": fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"]
         }
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 class WxRequest(BaseModel):
     date: str = Field(..., description="ISO 8601 local date time")
@@ -449,8 +488,10 @@ def calculate_wuxing_endpoint(req: WxRequest):
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time": TST
         }
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 class TSTRequest(BaseModel):
     date: str = Field(..., description="ISO 8601 local date time")
@@ -517,8 +558,10 @@ def calculate_tst_endpoint(req: TSTRequest):
             "true_solar_time_hours": round(TST, 4),
             "true_solar_time_formatted": tst_formatted
         }
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 @app.get("/info/wuxing-mapping")
 def get_wuxing_mapping():
@@ -838,8 +881,10 @@ def chart_endpoint(req: ChartRequest):
                         "Use dst_policy='earlier' or 'later' to auto-resolve.",
             },
         )
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 
 # =============================================================================
@@ -1170,8 +1215,10 @@ async def elevenlabs_chart_webhook(
                         "Please provide a valid local time.",
             },
         )
+    except BaziEngineError:
+        raise  # handled by global @exception_handler(BaziEngineError)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 
 if __name__ == "__main__":

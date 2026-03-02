@@ -30,6 +30,7 @@ ENGINE_ROOT = REPO_ROOT / "bazi_engine"
 # ── Layer assignments ────────────────────────────────────────────────────────
 LAYERS: Dict[str, int] = {
     "constants":   0,
+    "exc":         0,  # exception hierarchy — zero internal deps
     "types":       1,
     "ephemeris":   2,
     "time_utils":  2,

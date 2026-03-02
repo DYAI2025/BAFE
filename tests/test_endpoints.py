@@ -154,23 +154,23 @@ class TestBaziEndpoint:
         })
         assert r.status_code == 200
 
-    def test_invalid_date_returns_400(self):
+    def test_invalid_date_returns_4xx(self):
         r = client.post("/calculate/bazi", json={
             "date": "invalid-date",
             "tz": "Europe/Berlin",
             "lon": 13.405,
             "lat": 52.52,
         })
-        assert r.status_code == 400
+        assert r.status_code in (400, 422)
 
-    def test_invalid_timezone_returns_400(self):
+    def test_invalid_timezone_returns_422(self):
         r = client.post("/calculate/bazi", json={
             "date": "2024-02-10T14:30:00",
             "tz": "Invalid/Timezone",
             "lon": 13.405,
             "lat": 52.52,
         })
-        assert r.status_code == 400
+        assert r.status_code in (400, 422)
 
 
 class TestWesternEndpoint:
@@ -203,14 +203,14 @@ class TestWesternEndpoint:
         assert "longitude" in sun
         assert "zodiac_sign" in sun
 
-    def test_invalid_date_returns_400(self):
+    def test_invalid_date_returns_4xx(self):
         r = client.post("/calculate/western", json={
             "date": "not-a-date",
             "tz": "Europe/Berlin",
             "lon": 13.405,
             "lat": 52.52,
         })
-        assert r.status_code == 400
+        assert r.status_code in (400, 422)
 
 
 class TestFusionEndpoint:

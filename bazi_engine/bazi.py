@@ -8,6 +8,7 @@ from .types import BaziInput, BaziResult, Pillar, FourPillars, SolarTerm
 from .time_utils import parse_local_iso, to_chart_local, apply_day_boundary
 from .ephemeris import SwissEphBackend, datetime_utc_to_jd_ut, jd_ut_to_datetime_utc
 from .jieqi import compute_month_boundaries_from_lichun, compute_24_solar_terms_for_window
+from .exc import CalculationError, NotSupportedError
 
 from .constants import DAY_OFFSET
 
@@ -43,12 +44,15 @@ def _lichun_jd_ut_for_year(year: int, backend: SwissEphBackend) -> float:
     jd0 = swe.julday(year, 1, 1, 0.0)
     result = backend.solcross_ut(315.0, jd0)
     if result is None:
-        raise RuntimeError(f"Failed to find LiChun crossing for year {year}")
+        raise CalculationError(
+            f"Failed to find LiChun crossing for year {year}",
+            detail={"year": year, "target_lon_deg": 315.0},
+        )
     return float(result)
 
 def compute_bazi(inp: BaziInput) -> BaziResult:
     if inp.ephemeris_backend.lower() != "swisseph":
-        raise NotImplementedError("v0.2 ships a skyfield stub only; swisseph is implemented.")
+        raise NotSupportedError("v0.2 ships a skyfield stub only; swisseph is implemented.")
 
     backend = SwissEphBackend(ephe_path=inp.ephe_path)
 

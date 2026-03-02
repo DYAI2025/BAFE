@@ -9,6 +9,8 @@ import os
 
 import swisseph as swe
 
+from .exc import EphemerisUnavailableError
+
 def norm360(deg: float) -> float:
     x = deg % 360.0
     if x < 0:
@@ -57,7 +59,7 @@ class SwissEphBackend:
             swe.set_ephe_path(path)
             self.flags = swe.FLG_SWIEPH
             self.mode = "SWIEPH"
-        except FileNotFoundError:
+        except (FileNotFoundError, EphemerisUnavailableError):
             self.flags = swe.FLG_MOSEPH
             self.mode = "MOSEPH"
 
@@ -130,8 +132,9 @@ def ensure_ephemeris_files(ephe_path: Optional[str] = None) -> str:
     path.mkdir(parents=True, exist_ok=True)
     missing = [name for name in EPHEMERIS_FILES_REQUIRED if not (path / name).exists()]
     if missing:
-        raise FileNotFoundError(
+        raise EphemerisUnavailableError(
             "Swiss Ephemeris files missing. Provide them via SE_EPHE_PATH or ephe_path. "
-            f"Missing: {missing}. Resolved path: {path}"
+            f"Missing: {missing}. Resolved path: {path}",
+            detail={"missing_files": missing, "resolved_path": str(path)},
         )
     return str(path)
