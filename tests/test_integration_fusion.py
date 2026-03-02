@@ -1,17 +1,14 @@
 """
 test_integration_fusion.py — End-to-end integration tests for compute_fusion_analysis()
 
-These tests exercise the full pipeline:
-  planetary positions → WuXingVector → harmony index → interpretation text
+Testet vier Ebenen:
+  I.   Schemavalidierung (Ausgabestruktur vollständig?)
+  II.  Mathematische Invarianten (Vektoren, H-Bereich, Determinismus)
+  III. Interpretationskonsistenz (Text passt zu H-Wert)
+  IV.  Logik-B-Integration (compute_fusion_analysis → classify_zones → format_report_b)
+       ← NEU: verbindet Fusion-Output mit Zonenklassifikation
 
-No HTTP, no ephemeris files needed. Uses fixed synthetic planetary data.
-
-Integration assertions cover:
-  - Output schema completeness
-  - Mathematical consistency (vectors sum to > 0, harmony in [0,1])
-  - Determinism (same input → same output)
-  - Known reference cases (pure Fire vs pure Water → low harmony)
-  - Text generation non-empty and harmony-consistent
+No HTTP, no ephemeris files needed. Alle Tests mit synthetischen Daten.
 """
 from __future__ import annotations
 
@@ -299,3 +296,159 @@ class TestFusionEdgeCases:
             western_bodies=WESTERN_BODIES_AQUARIUS,
         )
         assert 0.0 <= result["harmony_index"]["harmony_index"] <= 1.0
+
+
+# ── IV. Logik-B-Integration ───────────────────────────────────────────────────
+# Verbindet compute_fusion_analysis() → classify_zones() → format_report_b()
+# Das ist der vollständige Interpretationspfad der diagnostischen Karte.
+
+from bazi_engine.wuxing.zones import (
+    classify_zones, build_leitfragen, format_report_b, ZoneResult,
+)
+from bazi_engine.wuxing.analysis import interpret_harmony
+
+
+def _fusion_to_zones(western_bodies, bazi_pillars) -> tuple[dict, ZoneResult]:
+    """Hilfsfunktion: Fusion → elemental_comparison → ZoneResult."""
+    fusion = compute_fusion_analysis(
+        birth_utc_dt=BIRTH_UTC,
+        latitude=52.52, longitude=13.405,
+        bazi_pillars=bazi_pillars,
+        western_bodies=western_bodies,
+    )
+    comp = fusion["elemental_comparison"]
+    west_norm = fusion["wu_xing_vectors"]["western_planets"]
+    bazi_norm = fusion["wu_xing_vectors"]["bazi_pillars"]
+    result = classify_zones(west_norm, bazi_norm)
+    return fusion, result
+
+
+class TestLogikBPipeline:
+    """Testet den vollständigen Fusion → Zonen → Report Pfad."""
+
+    def test_classify_zones_from_fusion_output_returns_zone_result(self):
+        _, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        assert isinstance(result, ZoneResult)
+        assert set(result.zones.keys()) == {"Holz", "Feuer", "Erde", "Metall", "Wasser"}
+
+    def test_all_zones_are_valid_labels(self):
+        _, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        for zone in result.zones.values():
+            assert zone in ("TENSION", "STRENGTH", "DEVELOPMENT", "NEUTRAL")
+
+    def test_diffs_from_zones_match_elemental_comparison(self):
+        """ZoneResult.diffs und elemental_comparison weichen maximal 5e-4 ab.
+
+        elemental_comparison["difference"] = round(w − b, 3) → gerundet.
+        classify_zones() berechnet diffs aus den Rohwerten (nicht gerundet).
+        Beide stammen aus denselben wu_xing_vectors → Abweichung ≤ 5e-4.
+        """
+        fusion, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        comp = fusion["elemental_comparison"]
+        for elem in ("Holz", "Feuer", "Erde", "Metall", "Wasser"):
+            stored_diff = comp[elem]["difference"]
+            zone_diff   = result.diffs[elem]
+            assert abs(zone_diff - stored_diff) < 5e-4, (
+                f"{elem}: zones.diffs={zone_diff:.6f}, "
+                f"elemental_comparison={stored_diff:.6f} "
+                f"(Δ={abs(zone_diff-stored_diff):.2e})"
+            )
+
+    def test_zone_tension_matches_high_abs_diff(self):
+        """Jedes Element mit |d| > 0.15 muss TENSION sein."""
+        fusion, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        comp = fusion["elemental_comparison"]
+        for elem in ("Holz", "Feuer", "Erde", "Metall", "Wasser"):
+            abs_d = abs(comp[elem]["difference"])
+            if abs_d > 0.15:
+                assert result.zones[elem] == "TENSION", (
+                    f"{elem}: |d|={abs_d:.4f} > 0.15 → expected TENSION, "
+                    f"got {result.zones[elem]}"
+                )
+
+    def test_zone_non_tension_matches_low_abs_diff(self):
+        """Jedes Element mit |d| ≤ 0.15 darf nicht TENSION sein."""
+        fusion, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        comp = fusion["elemental_comparison"]
+        for elem in ("Holz", "Feuer", "Erde", "Metall", "Wasser"):
+            abs_d = abs(comp[elem]["difference"])
+            if abs_d <= 0.15:
+                assert result.zones[elem] != "TENSION", (
+                    f"{elem}: |d|={abs_d:.4f} ≤ 0.15 → should not be TENSION"
+                )
+
+    def test_build_leitfragen_from_fusion_returns_dict(self):
+        _, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        lf = build_leitfragen(result)
+        assert "tension" in lf
+        assert "development" in lf
+
+    def test_format_report_b_runs_on_fusion_data(self):
+        fusion, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        h = fusion["harmony_index"]["harmony_index"]
+        label = interpret_harmony(h)
+        report = format_report_b(h, label, result, use_sheng=True)
+        assert isinstance(report, str)
+        assert len(report) > 100
+
+    def test_report_harmony_value_matches_fusion_harmony(self):
+        """Der im Report angezeigte H-Wert muss dem Fusion-H entsprechen."""
+        fusion, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        h = fusion["harmony_index"]["harmony_index"]
+        label = interpret_harmony(h)
+        report = format_report_b(h, label, result)
+        # H×100, gerundet auf 2 Dezimalen
+        h_str = f"{h * 100:.2f}"
+        assert h_str in report, f"H={h_str} nicht im Report gefunden"
+
+    def test_pure_fire_vs_water_produces_tension_elements(self):
+        """Feuer vs. Wasser: hohe Differenzen → mindestens ein TENSION-Element."""
+        _, result = _fusion_to_zones(
+            BODIES_PURE_FIRE,
+            {"year": {"stem": "Ren", "branch": "Zi"},
+             "month": {"stem": "Gui", "branch": "Hai"},
+             "day": {"stem": "Ren", "branch": "Zi"},
+             "hour": {"stem": "Gui", "branch": "Hai"}},
+        )
+        assert len(result.tension_elements()) >= 1
+
+    def test_same_element_produces_no_tension(self):
+        """Reines Holz West + Reines Holz BaZi → kein TENSION (d ≈ 0 für Holz)."""
+        _, result = _fusion_to_zones(
+            {"Jupiter": {"longitude": 0.0, "is_retrograde": False},
+             "Uranus":  {"longitude": 60.0, "is_retrograde": False}},
+            PILLARS_PURE_WOOD,
+        )
+        # Holz sollte kein Tension haben (beide Seiten hoch, d klein)
+        assert result.zones["Holz"] != "TENSION"
+
+    def test_report_sections_present_for_active_elements(self):
+        """Wenn Tension-Elemente existieren, muss SPANNUNGSFELDER im Report sein."""
+        fusion, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        h = fusion["harmony_index"]["harmony_index"]
+        report = format_report_b(h, interpret_harmony(h), result)
+        if result.tension_elements():
+            assert "SPANNUNGSFELDER" in report
+        if result.strength_elements():
+            assert "STÄRKEFELDER" in report
+
+    def test_leitfragen_tension_elements_match_zones(self):
+        """Leitfragen-Tension-Keys müssen exakt mit tension_elements() übereinstimmen."""
+        _, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        lf = build_leitfragen(result)
+        assert set(lf["tension"].keys()) == set(result.tension_elements())
+
+    def test_leitfragen_development_elements_match_zones(self):
+        """Leitfragen-Development-Keys müssen exakt mit development_elements() übereinstimmen."""
+        _, result = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        lf = build_leitfragen(result)
+        assert set(lf["development"].keys()) == set(result.development_elements())
+
+    def test_cosmic_state_equals_harmony_index(self):
+        """cosmic_state ist derzeit redundant mit harmony_index (dokumentierte Limitation)."""
+        fusion, _ = _fusion_to_zones(WESTERN_BODIES_AQUARIUS, BAZI_PILLARS_STANDARD)
+        h = fusion["harmony_index"]["harmony_index"]
+        cs = fusion["cosmic_state"]
+        assert abs(h - cs) < 1e-6, (
+            f"cosmic_state={cs} ≠ harmony_index={h} (Redundanz-Invariante verletzt)"
+        )

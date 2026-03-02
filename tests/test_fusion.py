@@ -1,5 +1,19 @@
-"""Tests for fusion.py - Wu-Xing vectors, harmony index, equation of time."""
+"""
+test_fusion.py — Tests für fusion.py (Re-Export-Integrität + Regressionstests)
 
+Dieser Test prüft primär:
+  1. Re-Export-Kette: alle Symbole via bazi_engine.fusion erreichbar
+  2. Regressionstests der Kernsemantik (keine Duplikation zu spezialisierten Tests)
+  3. Logik-B-Verbindung: classify_zones() nutzt fusion-Ausgabe korrekt
+
+Spezialisierte Tests für die gleichen Funktionen:
+  test_wuxing_vector.py    — WuXingVector Geometrie
+  test_wuxing_analysis.py  — Harmony, planet_to_wuxing, BaZi-Extraktion
+  test_wuxing_constants.py — PLANET_TO_WUXING, WUXING_ORDER, WUXING_INDEX
+  test_wuxing_zones.py     — classify_zones, Leitfragen, Sheng-Zyklus
+  test_solar_time.py       — equation_of_time, true_solar_time (NOAA-Goldwerte)
+  test_integration_fusion.py — compute_fusion_analysis End-to-End
+"""
 from __future__ import annotations
 
 import pytest
@@ -248,41 +262,108 @@ class TestTrueSolarTimeFromCivil:
         assert 0 <= tst < 24
 
 
+_STANDARD_PILLARS = {
+    "year":  {"stem": "Jia",  "branch": "Chen"},
+    "month": {"stem": "Bing", "branch": "Yin"},
+    "day":   {"stem": "Jia",  "branch": "Chen"},
+    "hour":  {"stem": "Xin",  "branch": "Wei"},
+}
+_STANDARD_BODIES = {
+    "Sun":     {"longitude": 321.5, "is_retrograde": False},
+    "Moon":    {"longitude":  45.2, "is_retrograde": False},
+    "Mercury": {"longitude": 280.1, "is_retrograde": True},
+    "Venus":   {"longitude": 310.0, "is_retrograde": False},
+    "Mars":    {"longitude": 150.0, "is_retrograde": False},
+    "Jupiter": {"longitude":  60.0, "is_retrograde": False},
+    "Saturn":  {"longitude": 340.0, "is_retrograde": False},
+}
+
+
 class TestComputeFusionAnalysis:
-    """Tests for complete fusion analysis."""
+    """Tests for complete fusion analysis — schema and re-export contract."""
 
-    def test_returns_expected_keys(self):
+    def _run(self):
         from datetime import datetime, timezone
-
-        bazi_pillars = {
-            "year": {"stem": "Jia", "branch": "Chen"},
-            "month": {"stem": "Bing", "branch": "Yin"},
-            "day": {"stem": "Jia", "branch": "Chen"},
-            "hour": {"stem": "Xin", "branch": "Wei"},
-        }
-        western_bodies = {
-            "Sun": {"longitude": 321.5, "is_retrograde": False},
-            "Moon": {"longitude": 45.2, "is_retrograde": False},
-            "Mercury": {"longitude": 280.1, "is_retrograde": True},
-            "Venus": {"longitude": 310.0, "is_retrograde": False},
-            "Mars": {"longitude": 150.0, "is_retrograde": False},
-            "Jupiter": {"longitude": 60.0, "is_retrograde": False},
-            "Saturn": {"longitude": 340.0, "is_retrograde": False},
-        }
-
-        result = compute_fusion_analysis(
+        return compute_fusion_analysis(
             birth_utc_dt=datetime(2024, 2, 10, 13, 30, tzinfo=timezone.utc),
             latitude=52.52,
             longitude=13.405,
-            bazi_pillars=bazi_pillars,
-            western_bodies=western_bodies,
+            bazi_pillars=_STANDARD_PILLARS,
+            western_bodies=_STANDARD_BODIES,
         )
 
+    def test_returns_expected_keys(self):
+        result = self._run()
         assert "wu_xing_vectors" in result
         assert "harmony_index" in result
         assert "elemental_comparison" in result
         assert "cosmic_state" in result
         assert "fusion_interpretation" in result
+
+    def test_elemental_comparison_has_five_elements(self):
+        result = self._run()
+        assert set(result["elemental_comparison"].keys()) == {
+            "Holz", "Feuer", "Erde", "Metall", "Wasser"
+        }
+
+    def test_elemental_comparison_diff_equals_west_minus_bazi(self):
+        """Regressiontest: difference = round(western − bazi, 3).
+
+        elemental_comparison["difference"] wird auf 3 Dezimalen gerundet gespeichert.
+        Toleranz = 5e-4 (halbe letzte Stelle bei round(..., 3)).
+        """
+        result = self._run()
+        vecs = result["wu_xing_vectors"]
+        for elem in ("Holz", "Feuer", "Erde", "Metall", "Wasser"):
+            w = vecs["western_planets"][elem]
+            b = vecs["bazi_pillars"][elem]
+            d = result["elemental_comparison"][elem]["difference"]
+            assert abs(round(w - b, 3) - d) < 5e-4, (
+                f"{elem}: round(w−b)={round(w-b,3):.6f}, stored diff={d:.6f}"
+            )
+
+    def test_logik_b_pipeline_from_fusion_output(self):
+        """Verbindet compute_fusion_analysis → classify_zones → format_report_b.
+
+        Dieser Test ist der Nachweis, dass der Logik-B-Interpretationspfad
+        auf realer Fusion-Ausgabe funktioniert.
+        """
+        from bazi_engine.wuxing.zones import classify_zones, format_report_b
+        from bazi_engine.wuxing.analysis import interpret_harmony as ih
+
+        result = self._run()
+        west_norm = result["wu_xing_vectors"]["western_planets"]
+        bazi_norm = result["wu_xing_vectors"]["bazi_pillars"]
+
+        zone_result = classify_zones(west_norm, bazi_norm)
+        h = result["harmony_index"]["harmony_index"]
+        report = format_report_b(h, ih(h), zone_result)
+
+        assert isinstance(report, str)
+        assert len(report) > 50
+        assert "FUSION ANALYSE" in report
+
+    def test_logik_b_zone_diffs_match_elemental_comparison(self):
+        """Zonenklassifikation (Rohwerte) und elemental_comparison (gerundet) weichen
+        um maximal 5e-4 ab (Rundungsartefakt: elemental_comparison rundet auf 3 Stellen).
+        Beide stammen aus denselben normierten Vektoren — classify_zones nutzt die
+        ungerundeten Rohwerte aus wu_xing_vectors direkt.
+        """
+        from bazi_engine.wuxing.zones import classify_zones
+
+        result = self._run()
+        west_norm = result["wu_xing_vectors"]["western_planets"]
+        bazi_norm = result["wu_xing_vectors"]["bazi_pillars"]
+        zone_result = classify_zones(west_norm, bazi_norm)
+
+        for elem in ("Holz", "Feuer", "Erde", "Metall", "Wasser"):
+            stored_diff = result["elemental_comparison"][elem]["difference"]
+            zone_diff   = zone_result.diffs[elem]
+            # elemental_comparison rundet auf 3 Dezimalen → max. Abweichung 5e-4
+            assert abs(stored_diff - zone_diff) < 5e-4, (
+                f"{elem}: elemental_comparison.difference={stored_diff:.6f}, "
+                f"zones.diffs={zone_diff:.6f} (Diff: {abs(stored_diff-zone_diff):.2e})"
+            )
 
 
 class TestGenerateFusionInterpretation:
