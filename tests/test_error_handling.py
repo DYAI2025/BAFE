@@ -173,10 +173,9 @@ class TestEphemerisErrorCode:
 
     def test_ephemeris_unavailable_gives_503(self):
         from bazi_engine.exc import EphemerisUnavailableError
-        from bazi_engine import app as app_module
+        from bazi_engine.routers import bazi as bazi_router
 
-        # Patch compute_bazi to raise EphemerisUnavailableError
-        with patch.object(app_module, "compute_bazi",
+        with patch.object(bazi_router, "compute_bazi",
                           side_effect=EphemerisUnavailableError("no ephe files")):
             r = client.post("/calculate/bazi", json={
                 "date": "2024-02-10T14:30:00",
@@ -191,9 +190,9 @@ class TestEphemerisErrorCode:
 
     def test_ephemeris_503_response_has_error_field(self):
         from bazi_engine.exc import EphemerisUnavailableError
-        from bazi_engine import app as app_module
+        from bazi_engine.routers import bazi as bazi_router
 
-        with patch.object(app_module, "compute_bazi",
+        with patch.object(bazi_router, "compute_bazi",
                           side_effect=EphemerisUnavailableError("missing", detail={"missing_files": ["sepl.se1"]})):
             r = client.post("/calculate/bazi", json={
                 "date": "2024-02-10T14:30:00",
@@ -214,9 +213,9 @@ class TestCalculationErrorCode:
 
     def test_calculation_error_gives_500(self):
         from bazi_engine.exc import CalculationError
-        from bazi_engine import app as app_module
+        from bazi_engine.routers import bazi as bazi_router
 
-        with patch.object(app_module, "compute_bazi",
+        with patch.object(bazi_router, "compute_bazi",
                           side_effect=CalculationError("bisection failed")):
             r = client.post("/calculate/bazi", json={
                 "date": "2024-02-10T14:30:00",
@@ -235,9 +234,9 @@ class TestNotSupportedErrorCode:
 
     def test_not_supported_gives_501(self):
         from bazi_engine.exc import NotSupportedError
-        from bazi_engine import app as app_module
+        from bazi_engine.routers import bazi as bazi_router
 
-        with patch.object(app_module, "compute_bazi",
+        with patch.object(bazi_router, "compute_bazi",
                           side_effect=NotSupportedError("skyfield not impl")):
             r = client.post("/calculate/bazi", json={
                 "date": "2024-02-10T14:30:00",
@@ -263,9 +262,9 @@ class TestErrorResponseShape:
 
     @pytest.mark.parametrize("expected_code,expected_status,exc", ERROR_PAYLOADS)
     def test_error_shape(self, expected_code, expected_status, exc):
-        from bazi_engine import app as app_module
+        from bazi_engine.routers import bazi as bazi_router
 
-        with patch.object(app_module, "compute_bazi", side_effect=exc):
+        with patch.object(bazi_router, "compute_bazi", side_effect=exc):
             r = client.post("/calculate/bazi", json={
                 "date": "2024-02-10T14:30:00",
                 "tz": "Europe/Berlin",

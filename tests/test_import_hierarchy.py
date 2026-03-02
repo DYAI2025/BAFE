@@ -51,6 +51,17 @@ LAYERS: Dict[str, int] = {
     "bafe.canonical_json":  5,
     "bafe.errors":          5,
     "bafe.ruleset_loader":  5,
+    # routers and services also live at Layer 5
+    "routers.shared":       5,
+    "routers.info":         5,
+    "routers.bazi":         5,
+    "routers.western":      5,
+    "routers.fusion":       5,
+    "routers.validate":     5,
+    "routers.chart":        5,
+    "routers.webhooks":     5,
+    "services.geocoding":   5,
+    "services.auth":        5,
 }
 
 # Modules that are explicitly allowed to bypass the layer rule
