@@ -6,6 +6,10 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from math import sin, cos, radians, pi, sqrt
 
+# Re-export from solar_time for backwards compatibility.
+# Internal callers within fusion.py use the local wrappers below.
+from .solar_time import equation_of_time, true_solar_time  # noqa: F401
+
 # =============================================================================
 # PLANET → WU-XING ELEMENT MAPPING
 # =============================================================================
@@ -309,166 +313,39 @@ def interpret_harmony(h: float) -> str:
 
 
 # =============================================================================
-# EQUATION OF TIME (Zeitgleichung)
+# TRUE SOLAR TIME helpers (canonical implementations in solar_time.py)
+# Re-exported above for backwards compatibility.
+# true_solar_time_from_civil stays here as it is fusion-specific.
 # =============================================================================
-
-def equation_of_time(day_of_year: int, use_precise: bool = True) -> float:
-    """
-    Calculate Equation of Time (E_t) in minutes.
-
-    The Equation of Time quantifies the discrepancy between
-    apparent solar time and mean solar time due to:
-    1. Earth's elliptical orbit (eccentricity effect)
-    2. Earth's axial tilt (obliquity effect)
-
-    Args:
-        day_of_year: Day number (1-366)
-        use_precise: If True, use more accurate formula with both effects
-
-    Returns:
-        Equation of Time in minutes (can be positive or negative)
-        Range: approximately -14.2 to +16.4 minutes
-
-    Formula (standard approximation):
-        E_t = 9.87*sin(2B) - 7.53*cos(B) - 1.5*sin(B)
-        where B = 360*(N-81)/365 degrees
-
-    More precise formula separates eccentricity and obliquity effects.
-    """
-    if use_precise:
-        # More accurate formula using both eccentricity and obliquity
-        # Reference: NOAA Solar Calculator / Astronomical Algorithms
-        # Fractional year in radians
-        gamma = 2 * pi * (day_of_year - 1) / 365.0
-
-        # Equation of time in minutes (more accurate Fourier series)
-        E = 229.18 * (
-            0.000075
-            + 0.001868 * cos(gamma)
-            - 0.032077 * sin(gamma)
-            - 0.014615 * cos(2 * gamma)
-            - 0.040849 * sin(2 * gamma)
-        )
-        return round(E, 3)
-    else:
-        # Simplified formula
-        B = 360 * (day_of_year - 81) / 365
-        B_rad = radians(B)
-
-        E = (9.87 * sin(2 * B_rad)
-             - 7.53 * cos(B_rad)
-             - 1.5 * sin(B_rad))
-
-        return round(E, 2)
-
-
-def true_solar_time(
-    civil_time_hours: float,
-    longitude_deg: float,
-    day_of_year: int,
-    timezone_offset_hours: Optional[float] = None
-) -> float:
-    """
-    Calculate True Solar Time (TST) from civil time.
-
-    TST = Local Mean Time + Equation of Time
-    LMT = UTC + (longitude / 15) hours
-
-    For civil time with a timezone:
-    TST = civil_time - tz_offset + (longitude/15) + E_t
-
-    Args:
-        civil_time_hours: Local civil time in hours (e.g., 14.5 = 14:30)
-        longitude_deg: Longitude (positive = east, negative = west)
-        day_of_year: Day of year (1-366)
-        timezone_offset_hours: Timezone offset from UTC in hours (e.g., +1 for CET).
-                              If None, uses longitude-based calculation for LMT input.
-
-    Returns:
-        True Solar Time in hours (0-24)
-
-    Note:
-        For accurate BaZi hour pillar calculations, TST should be used instead
-        of civil time, as the Chinese hour system is based on solar position.
-
-    Example:
-        For Berlin (lon=13.4°, tz=+1):
-        - Civil time: 14:30 (14.5 hours)
-        - TST ≈ 14:30 - 1h (tz) + 0.893h (lon/15) + E_t
-    """
-    if timezone_offset_hours is not None:
-        # Convert civil time to UTC, then to LMT
-        # UTC = civil_time - timezone_offset
-        # LMT = UTC + longitude/15
-        utc_hours = civil_time_hours - timezone_offset_hours
-        lmt_hours = utc_hours + (longitude_deg / 15.0)
-    else:
-        # Assume input is already LMT or use simple longitude correction
-        # Longitude correction: 4 minutes per degree = 1 hour per 15 degrees
-        lmt_hours = civil_time_hours + (longitude_deg / 15.0) - (longitude_deg / 15.0)
-        # Simplified: for LMT input, TST = LMT + E_t
-        lmt_hours = civil_time_hours
-
-    # Equation of Time in hours
-    E_t = equation_of_time(day_of_year) / 60.0
-
-    # True Solar Time = Local Mean Time + Equation of Time
-    TST = lmt_hours + E_t
-
-    # Normalize to 0-24 range
-    while TST < 0:
-        TST += 24
-    while TST >= 24:
-        TST -= 24
-
-    return round(TST, 4)
-
 
 def true_solar_time_from_civil(
     civil_time_hours: float,
     longitude_deg: float,
     day_of_year: int,
-    standard_meridian_deg: Optional[float] = None
+    standard_meridian_deg: Optional[float] = None,
 ) -> float:
     """
     Calculate True Solar Time from civil time with timezone standard meridian.
 
-    This is the correct formula for converting civil (clock) time to solar time:
     TST = civil_time + 4*(standard_meridian - longitude) + E_t
-
-    The 4 minutes/degree factor converts the longitude difference to time.
 
     Args:
         civil_time_hours: Local civil time in hours
         longitude_deg: Observer's longitude (positive = east)
         day_of_year: Day of year (1-366)
         standard_meridian_deg: Standard meridian for the timezone (e.g., 15° for CET).
-                              If None, calculated from typical timezone offsets.
+                              If None, estimated from longitude.
 
     Returns:
         True Solar Time in hours
-
-    Example:
-        Berlin (lon=13.405°, standard_meridian=15° for CET):
-        TST = civil_time + 4*(15-13.405)/60 + E_t
-            = civil_time + 0.106h + E_t
     """
     if standard_meridian_deg is None:
-        # Estimate standard meridian from longitude
-        # Standard time zones are typically at 15° intervals
         standard_meridian_deg = round(longitude_deg / 15) * 15
 
-    # Longitude correction: difference from standard meridian
-    # 4 minutes per degree = 1/15 hours per degree
     longitude_correction_hours = (standard_meridian_deg - longitude_deg) * 4 / 60
-
-    # Equation of Time
     E_t_hours = equation_of_time(day_of_year) / 60.0
-
-    # True Solar Time
     TST = civil_time_hours + longitude_correction_hours + E_t_hours
 
-    # Normalize to 0-24 range
     while TST < 0:
         TST += 24
     while TST >= 24:

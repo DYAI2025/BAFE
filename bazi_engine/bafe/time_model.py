@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from .errors import make_issue
-from ..fusion import true_solar_time
+from ..solar_time import true_solar_time
 
 def _parse_local_datetime(local_dt_str: str) -> datetime:
     # Accept ISO string without timezone
