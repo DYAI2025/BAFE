@@ -44,6 +44,7 @@ LAYERS: Dict[str, int] = {
     "wuxing.constants":      4,
     "wuxing.vector":         4,
     "wuxing.analysis":       4,
+    "wuxing.zones":          4,
     "app":         5,
     "cli":         5,
     # bafe sub-modules all live at Layer 5

@@ -15,7 +15,10 @@ BaZi-Vierparameterberechnung in einem gemeinsamen Symbolraum verbindet.
 | [05_harmony_index.md](05_harmony_index.md) | Der Harmony Index — Cosinus-Ähnlichkeit als Deutungsmaß |
 | [06_fusion_orchestration.md](06_fusion_orchestration.md) | compute_fusion_analysis() — Die Gesamtarchitektur |
 | [07_deutungsraume.md](07_deutungsraume.md) | Deutungsräume: Resonanzachse, Spannungsfeld, Archetypen |
-| [08_deutungslogiken.md](08_deutungslogiken.md) | Zwei Deutungslogiken: narrativ vs. diagnostisch |
+| [08_deutungslogiken.md](08_deutungslogiken.md) | Zwei Deutungslogiken: narrativ vs. diagnostisch (Logik B v3, exklusiv/hierarchisch) |
+| [09_nutzertest_design.md](09_nutzertest_design.md) | A/B-Testdesign und Fragebogen |
+| [10_sheng_zyklus.md](10_sheng_zyklus.md) | Sheng-Zyklus: Struktur vs. Messung vs. Interpretation; Ke-Zyklus als nächste Erweiterung |
+
 
 ## Konzept in einem Satz
 

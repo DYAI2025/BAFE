@@ -14,6 +14,15 @@ from .analysis import (
     calculate_harmony_index,
     interpret_harmony,
 )
+from .zones import (
+    ZoneResult,
+    ZoneLabel,
+    classify_zones,
+    question_tension,
+    question_development,
+    build_leitfragen,
+    format_report_b,
+)
 
 __all__ = [
     "PLANET_TO_WUXING",
@@ -26,4 +35,12 @@ __all__ = [
     "calculate_wuxing_from_bazi",
     "calculate_harmony_index",
     "interpret_harmony",
+    # Logik B — Zonenklassifikation
+    "ZoneResult",
+    "ZoneLabel",
+    "classify_zones",
+    "question_tension",
+    "question_development",
+    "build_leitfragen",
+    "format_report_b",
 ]
