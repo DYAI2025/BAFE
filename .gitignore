@@ -54,3 +54,4 @@ Thumbs.db
 # Ephemeris data (large files)
 *.se1
 *.bsp
+.claude/
