@@ -72,6 +72,12 @@ def calculate_bazi_endpoint(req: BaziRequest) -> Dict[str, Any]:
                 "birth_utc":    res.birth_utc_dt.isoformat(),
                 "lichun_local": res.lichun_local_dt.isoformat(),
             },
+            "transition": {
+                "solar_year": res.solar_year,
+                "is_before_lichun": res.is_before_lichun,
+                "lichun_year_start": res.lichun_local_dt.isoformat(),
+                "lichun_next": res.lichun_next_local_dt.isoformat() if res.lichun_next_local_dt else None,
+            },
             "solar_terms_count": len(res.solar_terms_local_dt) if res.solar_terms_local_dt else 0,
         }
     except BaziEngineError:

@@ -95,11 +95,18 @@ class BaziDates(BaseModel):
     birth_utc: str
     lichun_local: str
 
+class BaziTransition(BaseModel):
+    solar_year: int
+    is_before_lichun: bool
+    lichun_year_start: str
+    lichun_next: Optional[str] = None
+
 class BaziSection(BaseModel):
     ruleset_id: str
     pillars: BaziPillars
     day_master: str
     dates: BaziDates
+    transition: Optional[BaziTransition] = None
 
 class WuXingDistribution(BaseModel):
     Holz: float
@@ -217,6 +224,12 @@ def chart_endpoint(req: ChartRequest) -> Dict[str, Any]:
                 "birth_local":  bazi_result.birth_local_dt.isoformat(),
                 "birth_utc":    bazi_result.birth_utc_dt.isoformat(),
                 "lichun_local": bazi_result.lichun_local_dt.isoformat(),
+            },
+            "transition": {
+                "solar_year": bazi_result.solar_year,
+                "is_before_lichun": bazi_result.is_before_lichun,
+                "lichun_year_start": bazi_result.lichun_local_dt.isoformat(),
+                "lichun_next": bazi_result.lichun_next_local_dt.isoformat() if bazi_result.lichun_next_local_dt else None,
             },
         }
 

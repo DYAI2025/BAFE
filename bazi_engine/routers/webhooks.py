@@ -173,6 +173,9 @@ async def elevenlabs_chart_webhook(
                 "dayMaster":    day_pillar["stamm"],
                 "hourAnimal":   hour_pillar["tier"],
                 "hourElement":  hour_pillar["element"],
+                "solarYear":    bazi_result.solar_year,
+                "isBeforeLiChun": bazi_result.is_before_lichun,
+                "lichunNext":   bazi_result.lichun_next_local_dt.isoformat() if bazi_result.lichun_next_local_dt else None,
             },
             "fusion": {
                 "harmonyIndex":          fusion["harmony_index"]["harmony_index"],
