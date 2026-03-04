@@ -72,4 +72,9 @@ class BaziResult:
     month_boundaries_local_dt: Sequence[datetime]
     month_index: int
 
+    # v1.0 Transition metadata — clarifies year boundary at LiChun
+    solar_year: int = 0
+    is_before_lichun: bool = False
+    lichun_next_local_dt: Optional[datetime] = None
+
     solar_terms_local_dt: Optional[Sequence[SolarTerm]] = None

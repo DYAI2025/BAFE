@@ -73,12 +73,15 @@ def compute_bazi(inp: BaziInput) -> BaziResult:
     jd_lichun_this = _lichun_jd_ut_for_year(y, backend)
     lichun_this_local = jd_ut_to_datetime_utc(jd_lichun_this).astimezone(chart_local_dt.tzinfo)
 
-    if chart_local_dt < lichun_this_local:
+    before_lichun = chart_local_dt < lichun_this_local
+    if before_lichun:
         solar_year = y - 1
         jd_lichun_used = _lichun_jd_ut_for_year(y - 1, backend)
+        jd_lichun_next = jd_lichun_this
     else:
         solar_year = y
         jd_lichun_used = jd_lichun_this
+        jd_lichun_next = _lichun_jd_ut_for_year(y + 1, backend)
 
     year_p = year_pillar_from_solar_year(solar_year)
 
@@ -152,5 +155,8 @@ def compute_bazi(inp: BaziInput) -> BaziResult:
         lichun_local_dt=jd_ut_to_datetime_utc(jd_lichun_used).astimezone(chart_local_dt.tzinfo),
         month_boundaries_local_dt=month_bounds_local,
         month_index=month_index,
+        solar_year=solar_year,
+        is_before_lichun=before_lichun,
+        lichun_next_local_dt=jd_ut_to_datetime_utc(jd_lichun_next).astimezone(chart_local_dt.tzinfo),
         solar_terms_local_dt=solar_terms,
     )
