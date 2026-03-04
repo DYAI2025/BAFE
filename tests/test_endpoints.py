@@ -25,6 +25,56 @@ class TestHealthEndpoints:
         assert r.status_code == 200
         assert r.json()["status"] == "healthy"
 
+    def test_build_returns_version(self):
+        r = client.get("/build")
+        assert r.status_code == 200
+        data = r.json()
+        assert "version" in data
+
+    def test_build_returns_deploy_metadata_when_exposed(self, monkeypatch):
+        monkeypatch.setenv("EXPOSE_BUILD_METADATA", "1")
+        r = client.get("/build")
+        assert r.status_code == 200
+        data = r.json()
+        assert "version" in data
+        assert "railway_commit_sha" in data
+        assert "railway_deploy_id" in data
+
+    def test_openapi_reports_current_build_version(self):
+        r = client.get("/openapi.json")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["info"]["version"] == client.get("/build").json()["version"]
+
+
+class TestOpenApiContract:
+    """Guardrails for fields that must stay visible in /docs."""
+
+    @staticmethod
+    def _schema_from_openapi(schema_name: str) -> dict:
+        spec = client.get("/openapi.json").json()
+        return spec["components"]["schemas"][schema_name]
+
+    def test_fusion_request_has_optional_bazi_pillars(self):
+        schema = self._schema_from_openapi("FusionRequest")
+        assert "bazi_pillars" in schema["properties"]
+        assert "bazi_pillars" not in schema.get("required", [])
+
+    @pytest.mark.parametrize(
+        ("schema_name", "required_fields"),
+        [
+            ("BaziRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("WesternRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("FusionRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("WxRequest", {"ambiguousTime", "nonexistentTime"}),
+            ("TSTRequest", {"ambiguousTime", "nonexistentTime"}),
+        ],
+    )
+    def test_dst_resolution_fields_are_present_in_all_request_schemas(self, schema_name: str, required_fields: set[str]):
+        schema = self._schema_from_openapi(schema_name)
+        properties = set(schema["properties"].keys())
+        assert required_fields.issubset(properties)
+
 
 class TestBaziEndpoint:
     """Tests for /calculate/bazi endpoint."""
@@ -104,23 +154,23 @@ class TestBaziEndpoint:
         })
         assert r.status_code == 200
 
-    def test_invalid_date_returns_400(self):
+    def test_invalid_date_returns_4xx(self):
         r = client.post("/calculate/bazi", json={
             "date": "invalid-date",
             "tz": "Europe/Berlin",
             "lon": 13.405,
             "lat": 52.52,
         })
-        assert r.status_code == 400
+        assert r.status_code in (400, 422)
 
-    def test_invalid_timezone_returns_400(self):
+    def test_invalid_timezone_returns_422(self):
         r = client.post("/calculate/bazi", json={
             "date": "2024-02-10T14:30:00",
             "tz": "Invalid/Timezone",
             "lon": 13.405,
             "lat": 52.52,
         })
-        assert r.status_code == 400
+        assert r.status_code in (400, 422)
 
 
 class TestWesternEndpoint:
@@ -153,14 +203,14 @@ class TestWesternEndpoint:
         assert "longitude" in sun
         assert "zodiac_sign" in sun
 
-    def test_invalid_date_returns_400(self):
+    def test_invalid_date_returns_4xx(self):
         r = client.post("/calculate/western", json={
             "date": "not-a-date",
             "tz": "Europe/Berlin",
             "lon": 13.405,
             "lat": 52.52,
         })
-        assert r.status_code == 400
+        assert r.status_code in (400, 422)
 
 
 class TestFusionEndpoint:

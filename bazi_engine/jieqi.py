@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Tuple
 
 from .ephemeris import EphemerisBackend, norm360, wrap180
+from .exc import CalculationError
 
 SOLAR_TERM_TARGETS_DEG: List[float] = [15.0 * k for k in range(24)]
 
@@ -65,7 +66,10 @@ def find_crossing(
             return _bisection_crossing(backend, target_lon_deg, jd_lo, jd_hi, accuracy_seconds)
         jd_lo, f_lo = jd_hi, f_hi
         jd = jd_hi
-    raise RuntimeError("Failed to bracket solar longitude crossing")
+    raise CalculationError(
+        "Failed to bracket solar longitude crossing",
+        detail={"target_lon_deg": target_lon_deg, "jd_start_ut": jd_start_ut},
+    )
 
 def compute_month_boundaries_from_lichun(
     backend: EphemerisBackend,

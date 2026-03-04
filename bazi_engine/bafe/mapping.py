@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from math import floor
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 def wrap360(x: float) -> float:
     """Wrap to [0, 360)."""

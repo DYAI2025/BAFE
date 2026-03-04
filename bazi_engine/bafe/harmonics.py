@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from math import atan2, cos, sin, radians, degrees
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 from .mapping import wrap360
 

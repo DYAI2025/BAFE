@@ -5,10 +5,11 @@ from bazi_engine.bazi import compute_bazi
 
 import pytest
 from bazi_engine.ephemeris import ensure_ephemeris_files
+from bazi_engine.exc import EphemerisUnavailableError
 
 try:
     ensure_ephemeris_files(None)
-except FileNotFoundError:
+except (FileNotFoundError, EphemerisUnavailableError):
     pytest.skip("Legacy tests require Swiss Ephemeris files (no implicit downloads). Set SE_EPHE_PATH to run.", allow_module_level=True)
 
 # Format: (Name, Input, ExpectedPillars_Year_Month_Day_Hour)

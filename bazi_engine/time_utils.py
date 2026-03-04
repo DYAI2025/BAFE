@@ -2,11 +2,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Literal, Optional, Tuple
 
-class LocalTimeError(ValueError):
-    pass
+from .exc import InputError
+
+
+class LocalTimeError(InputError, ValueError):
+    """Raised for nonexistent or ambiguous local times (DST edge cases).
+
+    Inherits from both InputError (→ HTTP 422 via global handler) and
+    ValueError for backwards compatibility with code that catches ValueError.
+    """
+    http_status = 422
+    error_code = "dst_time_error"
+
+    def __init__(self, message: str, **kwargs: object) -> None:  # type: ignore[override]
+        # InputError expects keyword-only 'detail'; ValueError expects positional.
+        InputError.__init__(self, message)
+        ValueError.__init__(self, message)
 
 NonexistentTimePolicy = Literal["error", "shift_forward"]
 AmbiguousTimeChoice = Literal["earlier", "later"]
@@ -46,8 +60,18 @@ def resolve_local_iso(
         ``error``: raise LocalTimeError (default).
         ``shift_forward``: advance minute-by-minute to the next valid local time.
     """
-    naive = datetime.fromisoformat(birth_local_iso)
-    tz = ZoneInfo(tz_name)
+    try:
+        naive = datetime.fromisoformat(birth_local_iso)
+    except ValueError as e:
+        raise LocalTimeError(
+            f"Invalid date/time format: '{birth_local_iso}'. Expected ISO 8601 (e.g. '2024-02-10T14:30:00').",
+        ) from e
+    try:
+        tz = ZoneInfo(tz_name)
+    except (ZoneInfoNotFoundError, KeyError) as e:
+        raise LocalTimeError(
+            f"Unknown timezone: '{tz_name}'. Use an IANA timezone name (e.g. 'Europe/Berlin').",
+        ) from e
 
     ok0 = _roundtrip_ok(naive, tz, fold=0)
     ok1 = _roundtrip_ok(naive, tz, fold=1)
@@ -109,8 +133,18 @@ def resolve_local_iso(
 
 
 def parse_local_iso(birth_local_iso: str, tz_name: str, *, strict: bool, fold: int) -> datetime:
-    naive = datetime.fromisoformat(birth_local_iso)
-    tz = ZoneInfo(tz_name)
+    try:
+        naive = datetime.fromisoformat(birth_local_iso)
+    except ValueError as e:
+        raise LocalTimeError(
+            f"Invalid date/time format: '{birth_local_iso}'. Expected ISO 8601 (e.g. '2024-02-10T14:30:00').",
+        ) from e
+    try:
+        tz = ZoneInfo(tz_name)
+    except (ZoneInfoNotFoundError, KeyError) as e:
+        raise LocalTimeError(
+            f"Unknown timezone: '{tz_name}'. Use an IANA timezone name (e.g. 'Europe/Berlin').",
+        ) from e
     dt = naive.replace(tzinfo=tz, fold=fold)
 
     if not strict:
