@@ -3,7 +3,7 @@ routers/bazi.py — POST /calculate/bazi
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -29,7 +29,48 @@ class BaziRequest(BaseModel):
     nonexistentTime: NonexistentTimePolicy = Field("error")
 
 
-@router.post("/bazi")
+class PillarDetail(BaseModel):
+    stamm: str
+    zweig: str
+    tier: str
+    element: str
+
+
+class BaziPillarsResponse(BaseModel):
+    year: PillarDetail
+    month: PillarDetail
+    day: PillarDetail
+    hour: PillarDetail
+
+
+class ChineseYearInfo(BaseModel):
+    stem: str
+    branch: str
+    animal: str
+
+
+class ChineseSection(BaseModel):
+    year: ChineseYearInfo
+    month_master: str
+    day_master: str
+    hour_master: str
+
+
+class BaziDatesResponse(BaseModel):
+    birth_local: str
+    birth_utc: str
+    lichun_local: str
+
+
+class BaziResponse(BaseModel):
+    input: BaziRequest
+    pillars: BaziPillarsResponse
+    chinese: ChineseSection
+    dates: BaziDatesResponse
+    solar_terms_count: int
+
+
+@router.post("/bazi", response_model=BaziResponse)
 def calculate_bazi_endpoint(req: BaziRequest) -> Dict[str, Any]:
     try:
         dt_local, _ = resolve_local_iso(

@@ -42,7 +42,59 @@ ZODIAC_SIGNS_EN = [
 ]
 
 
-@router.post("/webhooks/chart")
+class WebhookWesternSection(BaseModel):
+    sunSign: str
+    moonSign: str
+    sunSignEnglish: str
+    moonSignEnglish: str
+    ascendant: Optional[float] = None
+    ascendantSign: Optional[str] = None
+    ascendantDegreeInSign: Optional[float] = None
+    retrogradePlanets: List[str] = []
+
+
+class WebhookEasternSection(BaseModel):
+    yearAnimal: str
+    yearElement: str
+    monthAnimal: str
+    monthElement: str
+    dayAnimal: str
+    dayElement: str
+    dayMaster: str
+    hourAnimal: str
+    hourElement: str
+
+
+class WebhookFusionSection(BaseModel):
+    harmonyIndex: float
+    harmonyInterpretation: str
+    cosmicState: str
+    westernDominantElement: str
+    baziDominantElement: str
+    wuXingWestern: Dict[str, float]
+    wuXingBazi: Dict[str, float]
+    elementalComparison: Dict[str, Any]
+    interpretation: Dict[str, Any]
+
+
+class WebhookSummary(BaseModel):
+    sternzeichen: str
+    mondzeichen: str
+    chinesischesZeichen: str
+    tagesmeister: str
+    harmonie: str
+    dominantesElement: str
+
+
+class WebhookChartResponse(BaseModel):
+    western: WebhookWesternSection
+    eastern: WebhookEasternSection
+    fusion: WebhookFusionSection
+    summary: WebhookSummary
+    meta: Dict[str, Any]
+
+
+@router.post("/webhooks/chart", response_model=WebhookChartResponse)
 async def elevenlabs_chart_webhook(
     request: Request,
     elevenlabs_signature: Optional[str] = Header(None, alias="elevenlabs-signature"),

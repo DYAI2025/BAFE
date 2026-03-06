@@ -10,6 +10,7 @@ from typing import Any, Dict, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from ..exc import BaziEngineError
 from ..fusion import PLANET_TO_WUXING, WUXING_ORDER
@@ -17,10 +18,45 @@ from ..time_utils import resolve_local_iso
 from ..western import compute_western_chart
 from .shared import ZODIAC_SIGNS_DE
 
+from .. import __version__ as _ENGINE_VERSION
+
 router = APIRouter(tags=["Info"])
 
-_BUILD_VERSION = os.environ.get("BUILD_VERSION", "1.0.0-rc1-20260220")
+_BUILD_VERSION = os.environ.get("BUILD_VERSION", _ENGINE_VERSION)
 
+
+# ── Response models ──────────────────────────────────────────────────────────
+
+class RootResponse(BaseModel):
+    status: str
+    service: str
+    version: str
+
+
+class HealthResponse(BaseModel):
+    status: str
+
+
+class BuildResponse(BaseModel):
+    version: str
+    railway_commit_sha: Optional[str] = None
+    railway_deploy_id: Optional[str] = None
+    fly_alloc_id: Optional[str] = None
+    fly_region: Optional[str] = None
+
+
+class ApiResponse(BaseModel):
+    sonne: str
+    input: Dict[str, Any]
+
+
+class WuxingMappingResponse(BaseModel):
+    mapping: Dict[str, Any]
+    order: list
+    description: Dict[str, str]
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _build_metadata() -> Dict[str, str]:
     meta: Dict[str, str] = {"version": _BUILD_VERSION}
@@ -32,22 +68,22 @@ def _build_metadata() -> Dict[str, str]:
     return meta
 
 
-@router.get("/")
+@router.get("/", response_model=RootResponse)
 def read_root() -> Dict[str, Any]:
     return {"status": "ok", "service": "bazi_engine_v2", **_build_metadata()}
 
 
-@router.get("/health")
+@router.get("/health", response_model=HealthResponse)
 def health_check() -> Dict[str, str]:
     return {"status": "healthy"}
 
 
-@router.get("/build")
+@router.get("/build", response_model=BuildResponse)
 def build_info() -> Dict[str, str]:
     return _build_metadata()
 
 
-@router.get("/api")
+@router.get("/api", response_model=ApiResponse)
 def api_endpoint(
     datum: str = Query(..., description="Datum im Format YYYY-MM-DD"),
     zeit: str = Query(..., description="Zeit im Format HH:MM[:SS]"),
@@ -87,7 +123,7 @@ def api_endpoint(
         raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
 
-@router.get("/info/wuxing-mapping")
+@router.get("/info/wuxing-mapping", response_model=WuxingMappingResponse)
 def get_wuxing_mapping() -> Dict[str, Any]:
     return {
         "mapping": PLANET_TO_WUXING,

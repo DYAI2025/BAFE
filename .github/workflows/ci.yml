@@ -45,6 +45,11 @@ jobs:
         env:
           SE_EPHE_PATH: /tmp/ephe
 
+      - name: Check OpenAPI spec drift
+        run: python scripts/export_openapi.py --check
+        env:
+          SE_EPHE_PATH: /tmp/ephe
+
   typecheck:
     runs-on: ubuntu-latest
     steps:

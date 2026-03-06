@@ -162,6 +162,16 @@ CI runs on Python 3.10, 3.11, 3.12. Tests skip gracefully if ephemeris files are
 | `spec/rulesets/standard_bazi_2026.json` | Canonical BaZi ruleset |
 | `tests/test_golden.py` | Golden vector tests |
 
+## OpenAPI Contract
+
+**`spec/openapi/openapi.json`** is the API contract (Source of Truth). See `CONTRACT.md` for details.
+
+- All 13 endpoints have typed request/response schemas
+- `/validate` references `spec/schemas/ValidateRequest.schema.json` and `ValidateResponse.schema.json`
+- CI checks for drift: `python scripts/export_openapi.py --check`
+- After any endpoint/schema change: `python scripts/export_openapi.py` to regenerate
+- `bazi_engine.__version__` is the single source for version strings
+
 ## Gotchas
 
 1. **Circular imports:** Respect module hierarchy strictly
@@ -170,3 +180,5 @@ CI runs on Python 3.10, 3.11, 3.12. Tests skip gracefully if ephemeris files are
 4. **DST:** Always handle `LocalTimeError` in API endpoints
 5. **Ephemeris:** Tests skip without explicit `SE_EPHE_PATH` setup
 6. **Contract tests:** BAFE validation requires `spec/` schemas to exist
+7. **OpenAPI drift:** Always run `python scripts/export_openapi.py` after changing endpoints or models
+8. **Endpoints are frozen:** Do not change existing endpoint paths or response structures — other services depend on them

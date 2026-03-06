@@ -26,9 +26,11 @@ from ..types import BaziInput, Fold, Pillar
 from ..western import compute_western_chart
 from .shared import ZODIAC_SIGNS_DE, STEM_TO_ELEMENT
 
+from .. import __version__ as _ENGINE_VERSION
+
 router = APIRouter(tags=["Chart"])
 
-_BUILD_VERSION = os.environ.get("BUILD_VERSION", "1.0.0-rc1-20260220")
+_BUILD_VERSION = os.environ.get("BUILD_VERSION", _ENGINE_VERSION)
 
 ZODIAC_SIGNS_EN = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",

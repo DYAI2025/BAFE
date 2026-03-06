@@ -12,22 +12,21 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .exc import BaziEngineError, EphemerisUnavailableError
+from . import __version__
 from .routers import info, bazi, western, fusion, validate, chart, webhooks
-
-_BUILD_VERSION = "1.0.0-rc1-20260220"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import logging
-    logging.getLogger("uvicorn").info(f"BAFE starting: {_BUILD_VERSION}")
+    logging.getLogger("uvicorn").info(f"BAFE starting: {__version__}")
     yield
 
 
 app = FastAPI(
     title="BaZi Engine v2 API",
     description="API for BaZi (Chinese Astrology) and Basic Western Astrology calculations.",
-    version=_BUILD_VERSION,
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -61,6 +60,94 @@ app.include_router(western.router)
 app.include_router(fusion.router)
 app.include_router(chart.router)
 app.include_router(webhooks.router)
+
+
+# ── OpenAPI customization ────────────────────────────────────────────────────
+
+def _custom_openapi():  # type: ignore[no-untyped-def]
+    """Patch the auto-generated OpenAPI to reference the contract schemas
+    for /validate (ValidateRequest / ValidateResponse) instead of generic
+    ``object``. No runtime behavior change — documentation only."""
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    import json
+    from pathlib import Path
+    from fastapi.openapi.utils import get_openapi
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # Load Draft-07 schemas and embed as OpenAPI components
+    spec_dir = Path(__file__).resolve().parent.parent / "spec" / "schemas"
+    for name in ("ValidateRequest", "ValidateResponse"):
+        path = spec_dir / f"{name}.schema.json"
+        if path.exists():
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            # Strip Draft-07 meta-keys that are invalid in OpenAPI 3.1 component context
+            raw.pop("$schema", None)
+            raw.pop("$id", None)
+            # Inline definitions as-is (OpenAPI 3.1 supports full JSON Schema)
+            schema.setdefault("components", {}).setdefault("schemas", {})[name] = raw
+
+    # Patch /validate path to reference the real schemas
+    validate_path = schema.get("paths", {}).get("/validate", {}).get("post")
+    if validate_path:
+        validate_path["requestBody"] = {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/ValidateRequest"}
+                }
+            },
+        }
+        validate_path["responses"] = {
+            "200": {
+                "description": "Validation result",
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/ValidateResponse"}
+                    }
+                },
+            },
+            "422": {
+                "description": "Request schema violation",
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/ErrorEnvelope"}
+                    }
+                },
+            },
+            "500": {
+                "description": "Internal validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/ErrorEnvelope"}
+                    }
+                },
+            },
+        }
+
+    # Standard error envelope used by exception handlers
+    schema.setdefault("components", {}).setdefault("schemas", {})["ErrorEnvelope"] = {
+        "type": "object",
+        "properties": {
+            "error": {"type": "string"},
+            "message": {"type": "string"},
+            "detail": {"type": "object"},
+        },
+        "required": ["error", "message"],
+    }
+
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = _custom_openapi  # type: ignore[method-assign]
 
 
 if __name__ == "__main__":

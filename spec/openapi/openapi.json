@@ -1,0 +1,3250 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BaZi Engine v2 API",
+    "description": "API for BaZi (Chinese Astrology) and Basic Western Astrology calculations.",
+    "version": "1.0.0-rc1-20260220"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Read Root",
+        "operationId": "read_root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RootResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/build": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Build Info",
+        "operationId": "build_info_build_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Api Endpoint",
+        "operationId": "api_endpoint_api_get",
+        "parameters": [
+          {
+            "name": "datum",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Datum im Format YYYY-MM-DD",
+              "title": "Datum"
+            },
+            "description": "Datum im Format YYYY-MM-DD"
+          },
+          {
+            "name": "zeit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Zeit im Format HH:MM[:SS]",
+              "title": "Zeit"
+            },
+            "description": "Zeit im Format HH:MM[:SS]"
+          },
+          {
+            "name": "ort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ort als 'lat,lon'",
+              "title": "Ort"
+            },
+            "description": "Ort als 'lat,lon'"
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Timezone name",
+              "default": "Europe/Berlin",
+              "title": "Tz"
+            },
+            "description": "Timezone name"
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Longitude in degrees",
+              "default": 13.405,
+              "title": "Lon"
+            },
+            "description": "Longitude in degrees"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Latitude in degrees",
+              "default": 52.52,
+              "title": "Lat"
+            },
+            "description": "Latitude in degrees"
+          },
+          {
+            "name": "ambiguousTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "earlier",
+                "later"
+              ],
+              "type": "string",
+              "default": "earlier",
+              "title": "Ambiguoustime"
+            }
+          },
+          {
+            "name": "nonexistentTime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "error",
+                "shift_forward"
+              ],
+              "type": "string",
+              "default": "error",
+              "title": "Nonexistenttime"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/info/wuxing-mapping": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Get Wuxing Mapping",
+        "operationId": "get_wuxing_mapping_info_wuxing_mapping_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WuxingMappingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validate": {
+      "post": {
+        "tags": [
+          "Validation"
+        ],
+        "summary": "Validate",
+        "description": "Contract-first validator (JSON Schema Draft-07).",
+        "operationId": "validate_validate_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request schema violation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calculate/bazi": {
+      "post": {
+        "tags": [
+          "BaZi"
+        ],
+        "summary": "Calculate Bazi Endpoint",
+        "operationId": "calculate_bazi_endpoint_calculate_bazi_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaziRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaziResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calculate/western": {
+      "post": {
+        "tags": [
+          "Western Astrology"
+        ],
+        "summary": "Calculate Western Endpoint",
+        "operationId": "calculate_western_endpoint_calculate_western_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WesternRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WesternResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calculate/fusion": {
+      "post": {
+        "tags": [
+          "Fusion / Wu-Xing"
+        ],
+        "summary": "Calculate Fusion Endpoint",
+        "description": "Wu-Xing + Western harmony analysis.",
+        "operationId": "calculate_fusion_endpoint_calculate_fusion_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FusionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FusionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calculate/wuxing": {
+      "post": {
+        "tags": [
+          "Fusion / Wu-Xing"
+        ],
+        "summary": "Calculate Wuxing Endpoint",
+        "description": "Wu-Xing element vector from western planetary positions.",
+        "operationId": "calculate_wuxing_endpoint_calculate_wuxing_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WxRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WxResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calculate/tst": {
+      "post": {
+        "tags": [
+          "Fusion / Wu-Xing"
+        ],
+        "summary": "Calculate Tst Endpoint",
+        "description": "True Solar Time (TST) calculation.",
+        "operationId": "calculate_tst_endpoint_calculate_tst_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TSTRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TSTResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chart": {
+      "post": {
+        "tags": [
+          "Chart"
+        ],
+        "summary": "Chart Endpoint",
+        "description": "Combined chart: Western positions + BaZi pillars + time scales + Wu-Xing.",
+        "operationId": "chart_endpoint_chart_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/chart": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Elevenlabs Chart Webhook",
+        "description": "ElevenLabs Agent Tool: Astrology chart for a birth date.",
+        "operationId": "elevenlabs_chart_webhook_api_webhooks_chart_post",
+        "parameters": [
+          {
+            "name": "elevenlabs-signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Elevenlabs-Signature"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookChartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponse": {
+        "properties": {
+          "sonne": {
+            "type": "string",
+            "title": "Sonne"
+          },
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sonne",
+          "input"
+        ],
+        "title": "ApiResponse"
+      },
+      "BaziDates": {
+        "properties": {
+          "birth_local": {
+            "type": "string",
+            "title": "Birth Local"
+          },
+          "birth_utc": {
+            "type": "string",
+            "title": "Birth Utc"
+          },
+          "lichun_local": {
+            "type": "string",
+            "title": "Lichun Local"
+          }
+        },
+        "type": "object",
+        "required": [
+          "birth_local",
+          "birth_utc",
+          "lichun_local"
+        ],
+        "title": "BaziDates"
+      },
+      "BaziDatesResponse": {
+        "properties": {
+          "birth_local": {
+            "type": "string",
+            "title": "Birth Local"
+          },
+          "birth_utc": {
+            "type": "string",
+            "title": "Birth Utc"
+          },
+          "lichun_local": {
+            "type": "string",
+            "title": "Lichun Local"
+          }
+        },
+        "type": "object",
+        "required": [
+          "birth_local",
+          "birth_utc",
+          "lichun_local"
+        ],
+        "title": "BaziDatesResponse"
+      },
+      "BaziPillars": {
+        "properties": {
+          "year": {
+            "$ref": "#/components/schemas/PillarSpec"
+          },
+          "month": {
+            "$ref": "#/components/schemas/PillarSpec"
+          },
+          "day": {
+            "$ref": "#/components/schemas/PillarSpec"
+          },
+          "hour": {
+            "$ref": "#/components/schemas/PillarSpec"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "day",
+          "hour"
+        ],
+        "title": "BaziPillars"
+      },
+      "BaziPillarsResponse": {
+        "properties": {
+          "year": {
+            "$ref": "#/components/schemas/PillarDetail"
+          },
+          "month": {
+            "$ref": "#/components/schemas/PillarDetail"
+          },
+          "day": {
+            "$ref": "#/components/schemas/PillarDetail"
+          },
+          "hour": {
+            "$ref": "#/components/schemas/PillarDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "day",
+          "hour"
+        ],
+        "title": "BaziPillarsResponse"
+      },
+      "BaziRequest": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Local ISO8601 datetime"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz",
+            "description": "IANA timezone name",
+            "default": "Europe/Berlin"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon",
+            "description": "Longitude in degrees",
+            "default": 13.405
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat",
+            "description": "Latitude in degrees",
+            "default": 52.52
+          },
+          "standard": {
+            "type": "string",
+            "enum": [
+              "CIVIL",
+              "LMT"
+            ],
+            "title": "Standard",
+            "default": "CIVIL"
+          },
+          "boundary": {
+            "type": "string",
+            "enum": [
+              "midnight",
+              "zi"
+            ],
+            "title": "Boundary",
+            "default": "midnight"
+          },
+          "ambiguousTime": {
+            "type": "string",
+            "enum": [
+              "earlier",
+              "later"
+            ],
+            "title": "Ambiguoustime",
+            "default": "earlier"
+          },
+          "nonexistentTime": {
+            "type": "string",
+            "enum": [
+              "error",
+              "shift_forward"
+            ],
+            "title": "Nonexistenttime",
+            "default": "error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "BaziRequest"
+      },
+      "BaziResponse": {
+        "properties": {
+          "input": {
+            "$ref": "#/components/schemas/BaziRequest"
+          },
+          "pillars": {
+            "$ref": "#/components/schemas/BaziPillarsResponse"
+          },
+          "chinese": {
+            "$ref": "#/components/schemas/ChineseSection"
+          },
+          "dates": {
+            "$ref": "#/components/schemas/BaziDatesResponse"
+          },
+          "solar_terms_count": {
+            "type": "integer",
+            "title": "Solar Terms Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "pillars",
+          "chinese",
+          "dates",
+          "solar_terms_count"
+        ],
+        "title": "BaziResponse"
+      },
+      "BaziSection": {
+        "properties": {
+          "ruleset_id": {
+            "type": "string",
+            "title": "Ruleset Id"
+          },
+          "pillars": {
+            "$ref": "#/components/schemas/BaziPillars"
+          },
+          "day_master": {
+            "type": "string",
+            "title": "Day Master"
+          },
+          "dates": {
+            "$ref": "#/components/schemas/BaziDates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ruleset_id",
+          "pillars",
+          "day_master",
+          "dates"
+        ],
+        "title": "BaziSection"
+      },
+      "BuildResponse": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "railway_commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Railway Commit Sha"
+          },
+          "railway_deploy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Railway Deploy Id"
+          },
+          "fly_alloc_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fly Alloc Id"
+          },
+          "fly_region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fly Region"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "BuildResponse"
+      },
+      "ChartRequest": {
+        "properties": {
+          "local_datetime": {
+            "type": "string",
+            "title": "Local Datetime",
+            "description": "ISO 8601 local datetime"
+          },
+          "tz_id": {
+            "type": "string",
+            "title": "Tz Id",
+            "description": "IANA timezone name",
+            "default": "Europe/Berlin"
+          },
+          "geo_lon_deg": {
+            "type": "number",
+            "title": "Geo Lon Deg",
+            "description": "Geographic longitude in degrees",
+            "default": 13.405
+          },
+          "geo_lat_deg": {
+            "type": "number",
+            "title": "Geo Lat Deg",
+            "description": "Geographic latitude in degrees",
+            "default": 52.52
+          },
+          "dst_policy": {
+            "type": "string",
+            "enum": [
+              "error",
+              "earlier",
+              "later"
+            ],
+            "title": "Dst Policy",
+            "default": "error"
+          },
+          "bodies": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bodies",
+            "description": "Filter planetary bodies (default: all)"
+          },
+          "include_validation": {
+            "type": "boolean",
+            "title": "Include Validation",
+            "default": false
+          },
+          "time_standard": {
+            "type": "string",
+            "enum": [
+              "CIVIL",
+              "LMT"
+            ],
+            "title": "Time Standard",
+            "default": "CIVIL"
+          },
+          "day_boundary": {
+            "type": "string",
+            "enum": [
+              "midnight",
+              "zi"
+            ],
+            "title": "Day Boundary",
+            "default": "midnight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_datetime"
+        ],
+        "title": "ChartRequest"
+      },
+      "ChartResponse": {
+        "properties": {
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "parameter_set_id": {
+            "type": "string",
+            "title": "Parameter Set Id"
+          },
+          "time_scales": {
+            "$ref": "#/components/schemas/TimeScales"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            },
+            "type": "array",
+            "title": "Positions"
+          },
+          "bazi": {
+            "$ref": "#/components/schemas/BaziSection"
+          },
+          "wuxing": {
+            "$ref": "#/components/schemas/WuXingSection"
+          },
+          "houses": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Houses"
+          },
+          "angles": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Angles"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine_version",
+          "parameter_set_id",
+          "time_scales",
+          "positions",
+          "bazi",
+          "wuxing",
+          "houses",
+          "angles"
+        ],
+        "title": "ChartResponse"
+      },
+      "ChineseSection": {
+        "properties": {
+          "year": {
+            "$ref": "#/components/schemas/ChineseYearInfo"
+          },
+          "month_master": {
+            "type": "string",
+            "title": "Month Master"
+          },
+          "day_master": {
+            "type": "string",
+            "title": "Day Master"
+          },
+          "hour_master": {
+            "type": "string",
+            "title": "Hour Master"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month_master",
+          "day_master",
+          "hour_master"
+        ],
+        "title": "ChineseSection"
+      },
+      "ChineseYearInfo": {
+        "properties": {
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          },
+          "branch": {
+            "type": "string",
+            "title": "Branch"
+          },
+          "animal": {
+            "type": "string",
+            "title": "Animal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stem",
+          "branch",
+          "animal"
+        ],
+        "title": "ChineseYearInfo"
+      },
+      "FusionRequest": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "ISO 8601 local date time"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz",
+            "description": "Timezone name",
+            "default": "Europe/Berlin"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon",
+            "description": "Longitude in degrees"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat",
+            "description": "Latitude in degrees"
+          },
+          "ambiguousTime": {
+            "type": "string",
+            "enum": [
+              "earlier",
+              "later"
+            ],
+            "title": "Ambiguoustime",
+            "default": "earlier"
+          },
+          "nonexistentTime": {
+            "type": "string",
+            "enum": [
+              "error",
+              "shift_forward"
+            ],
+            "title": "Nonexistenttime",
+            "default": "error"
+          },
+          "bazi_pillars": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bazi Pillars",
+            "description": "BaZi pillars (auto-computed if omitted)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "lon",
+          "lat"
+        ],
+        "title": "FusionRequest"
+      },
+      "FusionResponse": {
+        "properties": {
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input"
+          },
+          "wu_xing_vectors": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Wu Xing Vectors"
+          },
+          "harmony_index": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Harmony Index"
+          },
+          "elemental_comparison": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Elemental Comparison"
+          },
+          "cosmic_state": {
+            "type": "number",
+            "title": "Cosmic State"
+          },
+          "fusion_interpretation": {
+            "type": "string",
+            "title": "Fusion Interpretation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "wu_xing_vectors",
+          "harmony_index",
+          "elemental_comparison",
+          "cosmic_state",
+          "fusion_interpretation"
+        ],
+        "title": "FusionResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse"
+      },
+      "PillarDetail": {
+        "properties": {
+          "stamm": {
+            "type": "string",
+            "title": "Stamm"
+          },
+          "zweig": {
+            "type": "string",
+            "title": "Zweig"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "element": {
+            "type": "string",
+            "title": "Element"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stamm",
+          "zweig",
+          "tier",
+          "element"
+        ],
+        "title": "PillarDetail"
+      },
+      "PillarSpec": {
+        "properties": {
+          "stem_index": {
+            "type": "integer",
+            "title": "Stem Index"
+          },
+          "branch_index": {
+            "type": "integer",
+            "title": "Branch Index"
+          },
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          },
+          "branch": {
+            "type": "string",
+            "title": "Branch"
+          },
+          "animal": {
+            "type": "string",
+            "title": "Animal"
+          },
+          "element": {
+            "type": "string",
+            "title": "Element"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stem_index",
+          "branch_index",
+          "stem",
+          "branch",
+          "animal",
+          "element"
+        ],
+        "title": "PillarSpec"
+      },
+      "Position": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "longitude_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude Deg"
+          },
+          "latitude_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude Deg"
+          },
+          "speed_deg_per_day": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed Deg Per Day"
+          },
+          "distance_au": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Au"
+          },
+          "is_retrograde": {
+            "type": "boolean",
+            "title": "Is Retrograde",
+            "default": false
+          },
+          "sign_index": {
+            "type": "integer",
+            "title": "Sign Index"
+          },
+          "sign_name": {
+            "type": "string",
+            "title": "Sign Name"
+          },
+          "sign_name_de": {
+            "type": "string",
+            "title": "Sign Name De"
+          },
+          "degree_in_sign": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degree In Sign"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "sign_index",
+          "sign_name",
+          "sign_name_de"
+        ],
+        "title": "Position"
+      },
+      "RootResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "version"
+        ],
+        "title": "RootResponse"
+      },
+      "TSTRequest": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "ISO 8601 local date time"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz",
+            "description": "Timezone name",
+            "default": "Europe/Berlin"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon",
+            "description": "Longitude in degrees"
+          },
+          "ambiguousTime": {
+            "type": "string",
+            "enum": [
+              "earlier",
+              "later"
+            ],
+            "title": "Ambiguoustime",
+            "default": "earlier"
+          },
+          "nonexistentTime": {
+            "type": "string",
+            "enum": [
+              "error",
+              "shift_forward"
+            ],
+            "title": "Nonexistenttime",
+            "default": "error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "lon"
+        ],
+        "title": "TSTRequest"
+      },
+      "TSTResponse": {
+        "properties": {
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input"
+          },
+          "civil_time_hours": {
+            "type": "number",
+            "title": "Civil Time Hours"
+          },
+          "longitude_correction_hours": {
+            "type": "number",
+            "title": "Longitude Correction Hours"
+          },
+          "equation_of_time_hours": {
+            "type": "number",
+            "title": "Equation Of Time Hours"
+          },
+          "true_solar_time_hours": {
+            "type": "number",
+            "title": "True Solar Time Hours"
+          },
+          "true_solar_time_formatted": {
+            "type": "string",
+            "title": "True Solar Time Formatted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "civil_time_hours",
+          "longitude_correction_hours",
+          "equation_of_time_hours",
+          "true_solar_time_hours",
+          "true_solar_time_formatted"
+        ],
+        "title": "TSTResponse"
+      },
+      "TimeScaleQuality": {
+        "properties": {
+          "tlst": {
+            "type": "string",
+            "title": "Tlst"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tlst"
+        ],
+        "title": "TimeScaleQuality"
+      },
+      "TimeScales": {
+        "properties": {
+          "utc": {
+            "type": "string",
+            "title": "Utc"
+          },
+          "civil_local": {
+            "type": "string",
+            "title": "Civil Local"
+          },
+          "jd_ut": {
+            "type": "number",
+            "title": "Jd Ut"
+          },
+          "tlst_hours": {
+            "type": "number",
+            "title": "Tlst Hours"
+          },
+          "eot_min": {
+            "type": "number",
+            "title": "Eot Min"
+          },
+          "dst_status": {
+            "type": "string",
+            "title": "Dst Status"
+          },
+          "dst_fold": {
+            "type": "integer",
+            "title": "Dst Fold"
+          },
+          "tz_abbrev": {
+            "type": "string",
+            "title": "Tz Abbrev"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/TimeScaleQuality"
+          }
+        },
+        "type": "object",
+        "required": [
+          "utc",
+          "civil_local",
+          "jd_ut",
+          "tlst_hours",
+          "eot_min",
+          "dst_status",
+          "dst_fold",
+          "tz_abbrev",
+          "quality"
+        ],
+        "title": "TimeScales"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationResult": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "title": "ValidationResult"
+      },
+      "WebhookChartResponse": {
+        "properties": {
+          "western": {
+            "$ref": "#/components/schemas/WebhookWesternSection"
+          },
+          "eastern": {
+            "$ref": "#/components/schemas/WebhookEasternSection"
+          },
+          "fusion": {
+            "$ref": "#/components/schemas/WebhookFusionSection"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/WebhookSummary"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "western",
+          "eastern",
+          "fusion",
+          "summary",
+          "meta"
+        ],
+        "title": "WebhookChartResponse"
+      },
+      "WebhookEasternSection": {
+        "properties": {
+          "yearAnimal": {
+            "type": "string",
+            "title": "Yearanimal"
+          },
+          "yearElement": {
+            "type": "string",
+            "title": "Yearelement"
+          },
+          "monthAnimal": {
+            "type": "string",
+            "title": "Monthanimal"
+          },
+          "monthElement": {
+            "type": "string",
+            "title": "Monthelement"
+          },
+          "dayAnimal": {
+            "type": "string",
+            "title": "Dayanimal"
+          },
+          "dayElement": {
+            "type": "string",
+            "title": "Dayelement"
+          },
+          "dayMaster": {
+            "type": "string",
+            "title": "Daymaster"
+          },
+          "hourAnimal": {
+            "type": "string",
+            "title": "Houranimal"
+          },
+          "hourElement": {
+            "type": "string",
+            "title": "Hourelement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "yearAnimal",
+          "yearElement",
+          "monthAnimal",
+          "monthElement",
+          "dayAnimal",
+          "dayElement",
+          "dayMaster",
+          "hourAnimal",
+          "hourElement"
+        ],
+        "title": "WebhookEasternSection"
+      },
+      "WebhookFusionSection": {
+        "properties": {
+          "harmonyIndex": {
+            "type": "number",
+            "title": "Harmonyindex"
+          },
+          "harmonyInterpretation": {
+            "type": "string",
+            "title": "Harmonyinterpretation"
+          },
+          "cosmicState": {
+            "type": "string",
+            "title": "Cosmicstate"
+          },
+          "westernDominantElement": {
+            "type": "string",
+            "title": "Westerndominantelement"
+          },
+          "baziDominantElement": {
+            "type": "string",
+            "title": "Bazidominantelement"
+          },
+          "wuXingWestern": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Wuxingwestern"
+          },
+          "wuXingBazi": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Wuxingbazi"
+          },
+          "elementalComparison": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Elementalcomparison"
+          },
+          "interpretation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Interpretation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "harmonyIndex",
+          "harmonyInterpretation",
+          "cosmicState",
+          "westernDominantElement",
+          "baziDominantElement",
+          "wuXingWestern",
+          "wuXingBazi",
+          "elementalComparison",
+          "interpretation"
+        ],
+        "title": "WebhookFusionSection"
+      },
+      "WebhookSummary": {
+        "properties": {
+          "sternzeichen": {
+            "type": "string",
+            "title": "Sternzeichen"
+          },
+          "mondzeichen": {
+            "type": "string",
+            "title": "Mondzeichen"
+          },
+          "chinesischesZeichen": {
+            "type": "string",
+            "title": "Chinesischeszeichen"
+          },
+          "tagesmeister": {
+            "type": "string",
+            "title": "Tagesmeister"
+          },
+          "harmonie": {
+            "type": "string",
+            "title": "Harmonie"
+          },
+          "dominantesElement": {
+            "type": "string",
+            "title": "Dominanteselement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sternzeichen",
+          "mondzeichen",
+          "chinesischesZeichen",
+          "tagesmeister",
+          "harmonie",
+          "dominantesElement"
+        ],
+        "title": "WebhookSummary"
+      },
+      "WebhookWesternSection": {
+        "properties": {
+          "sunSign": {
+            "type": "string",
+            "title": "Sunsign"
+          },
+          "moonSign": {
+            "type": "string",
+            "title": "Moonsign"
+          },
+          "sunSignEnglish": {
+            "type": "string",
+            "title": "Sunsignenglish"
+          },
+          "moonSignEnglish": {
+            "type": "string",
+            "title": "Moonsignenglish"
+          },
+          "ascendant": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ascendant"
+          },
+          "ascendantSign": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ascendantsign"
+          },
+          "ascendantDegreeInSign": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ascendantdegreeinsign"
+          },
+          "retrogradePlanets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Retrogradeplanets",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "sunSign",
+          "moonSign",
+          "sunSignEnglish",
+          "moonSignEnglish"
+        ],
+        "title": "WebhookWesternSection"
+      },
+      "WesternBodyResponse": {
+        "properties": {
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "distance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance"
+          },
+          "zodiac_sign": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zodiac Sign"
+          },
+          "degree_in_sign": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degree In Sign"
+          },
+          "is_retrograde": {
+            "type": "boolean",
+            "title": "Is Retrograde",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "WesternBodyResponse"
+      },
+      "WesternRequest": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Local ISO8601 datetime"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz",
+            "description": "IANA timezone name",
+            "default": "Europe/Berlin"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon",
+            "description": "Longitude in degrees",
+            "default": 13.405
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat",
+            "description": "Latitude in degrees",
+            "default": 52.52
+          },
+          "ambiguousTime": {
+            "type": "string",
+            "enum": [
+              "earlier",
+              "later"
+            ],
+            "title": "Ambiguoustime",
+            "default": "earlier"
+          },
+          "nonexistentTime": {
+            "type": "string",
+            "enum": [
+              "error",
+              "shift_forward"
+            ],
+            "title": "Nonexistenttime",
+            "default": "error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "WesternRequest"
+      },
+      "WesternResponse": {
+        "properties": {
+          "jd_ut": {
+            "type": "number",
+            "title": "Jd Ut"
+          },
+          "bodies": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WesternBodyResponse"
+            },
+            "type": "object",
+            "title": "Bodies"
+          },
+          "houses": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Houses"
+          },
+          "angles": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Angles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "jd_ut",
+          "bodies"
+        ],
+        "title": "WesternResponse"
+      },
+      "WuXingDistribution": {
+        "properties": {
+          "Holz": {
+            "type": "number",
+            "title": "Holz"
+          },
+          "Feuer": {
+            "type": "number",
+            "title": "Feuer"
+          },
+          "Erde": {
+            "type": "number",
+            "title": "Erde"
+          },
+          "Metall": {
+            "type": "number",
+            "title": "Metall"
+          },
+          "Wasser": {
+            "type": "number",
+            "title": "Wasser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "Holz",
+          "Feuer",
+          "Erde",
+          "Metall",
+          "Wasser"
+        ],
+        "title": "WuXingDistribution"
+      },
+      "WuXingSection": {
+        "properties": {
+          "from_planets": {
+            "$ref": "#/components/schemas/WuXingDistribution"
+          },
+          "from_bazi": {
+            "$ref": "#/components/schemas/WuXingDistribution"
+          },
+          "harmony_index": {
+            "type": "number",
+            "title": "Harmony Index"
+          },
+          "dominant_planet": {
+            "type": "string",
+            "title": "Dominant Planet"
+          },
+          "dominant_bazi": {
+            "type": "string",
+            "title": "Dominant Bazi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_planets",
+          "from_bazi",
+          "harmony_index",
+          "dominant_planet",
+          "dominant_bazi"
+        ],
+        "title": "WuXingSection"
+      },
+      "WuxingMappingResponse": {
+        "properties": {
+          "mapping": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Mapping"
+          },
+          "order": {
+            "items": {},
+            "type": "array",
+            "title": "Order"
+          },
+          "description": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mapping",
+          "order",
+          "description"
+        ],
+        "title": "WuxingMappingResponse"
+      },
+      "WxRequest": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "ISO 8601 local date time"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz",
+            "description": "Timezone name",
+            "default": "Europe/Berlin"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon",
+            "description": "Longitude in degrees"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat",
+            "description": "Latitude in degrees"
+          },
+          "ambiguousTime": {
+            "type": "string",
+            "enum": [
+              "earlier",
+              "later"
+            ],
+            "title": "Ambiguoustime",
+            "default": "earlier"
+          },
+          "nonexistentTime": {
+            "type": "string",
+            "enum": [
+              "error",
+              "shift_forward"
+            ],
+            "title": "Nonexistenttime",
+            "default": "error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "lon",
+          "lat"
+        ],
+        "title": "WxRequest"
+      },
+      "WxResponse": {
+        "properties": {
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input"
+          },
+          "wu_xing_vector": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Wu Xing Vector"
+          },
+          "dominant_element": {
+            "type": "string",
+            "title": "Dominant Element"
+          },
+          "equation_of_time": {
+            "type": "number",
+            "title": "Equation Of Time"
+          },
+          "true_solar_time": {
+            "type": "number",
+            "title": "True Solar Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "wu_xing_vector",
+          "dominant_element",
+          "equation_of_time",
+          "true_solar_time"
+        ],
+        "title": "WxResponse"
+      },
+      "ValidateRequest": {
+        "additionalProperties": false,
+        "definitions": {
+          "BaZiRuleset": {
+            "additionalProperties": true,
+            "properties": {
+              "ruleset_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ruleset_id"
+            ],
+            "type": "object"
+          },
+          "BirthEvent": {
+            "additionalProperties": false,
+            "properties": {
+              "dst_policy": {
+                "enum": [
+                  "error",
+                  "earlier",
+                  "later",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "geo_lat_deg": {
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              },
+              "geo_lon_deg": {
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              },
+              "local_datetime": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "tz_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "tz_offset_sec": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "local_datetime",
+              "geo_lon_deg",
+              "geo_lat_deg"
+            ],
+            "type": "object"
+          },
+          "BodyPosition": {
+            "additionalProperties": false,
+            "properties": {
+              "beta_deg": {
+                "maximum": 90,
+                "minimum": -90,
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "body": {
+                "type": "string"
+              },
+              "lambda_deg": {
+                "exclusiveMaximum": 360,
+                "minimum": 0,
+                "type": "number"
+              },
+              "retrograde": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "speed_deg_per_day": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "body",
+              "lambda_deg"
+            ],
+            "type": "object"
+          },
+          "EngineConfig": {
+            "additionalProperties": true,
+            "properties": {
+              "ayanamsa_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bazi_ruleset_id": {
+                "type": "string"
+              },
+              "branch_coordinate_convention": {
+                "default": "SHIFT_BOUNDARIES",
+                "enum": [
+                  "SHIFT_BOUNDARIES",
+                  "SHIFT_LONGITUDES"
+                ],
+                "type": "string"
+              },
+              "branch_width_deg": {
+                "default": 30.0,
+                "type": "number"
+              },
+              "compliance_mode": {
+                "default": "RELAXED",
+                "enum": [
+                  "STRICT",
+                  "RELAXED",
+                  "DEV"
+                ],
+                "type": "string"
+              },
+              "deterministic": {
+                "const": true,
+                "type": "boolean"
+              },
+              "dst_policy": {
+                "default": "error",
+                "enum": [
+                  "error",
+                  "earlier",
+                  "later"
+                ],
+                "type": "string"
+              },
+              "engine_version": {
+                "type": "string"
+              },
+              "epoch_id": {
+                "type": "string"
+              },
+              "float_format_policy": {
+                "additionalProperties": false,
+                "properties": {
+                  "fixed_decimals": {
+                    "maximum": 18,
+                    "minimum": 0,
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "mode": {
+                    "default": "shortest_roundtrip",
+                    "enum": [
+                      "fixed",
+                      "shortest_roundtrip"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "interval_convention": {
+                "default": "HALF_OPEN",
+                "enum": [
+                  "HALF_OPEN"
+                ],
+                "type": "string"
+              },
+              "json_canonicalization": {
+                "additionalProperties": false,
+                "properties": {
+                  "sorted_keys": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "utf8": {
+                    "default": true,
+                    "type": "boolean"
+                  }
+                },
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "month_boundary_mode": {
+                "default": "JIEQI_CROSSING",
+                "enum": [
+                  "JIEQI_CROSSING",
+                  "APEX_SEGMENTS"
+                ],
+                "type": "string"
+              },
+              "month_start_solar_longitude_deg": {
+                "default": 315.0,
+                "type": "number"
+              },
+              "parameter_set_id": {
+                "type": "string"
+              },
+              "phi_apex_offset_deg": {
+                "default": 15.0,
+                "type": "number"
+              },
+              "refdata": {
+                "$ref": "#/definitions/RefDataConfig"
+              },
+              "time_fallback_policy": {
+                "additionalProperties": false,
+                "properties": {
+                  "allow_compute_tlst_without_ut1": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "allow_tt_from_ut1_plus_deltat_override": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "time_standard": {
+                "enum": [
+                  "CIVIL",
+                  "LMT",
+                  "TLST"
+                ],
+                "type": "string"
+              },
+              "zi_apex_deg": {
+                "default": 270.0,
+                "type": "number"
+              },
+              "zodiac_mode": {
+                "enum": [
+                  "tropical",
+                  "sidereal"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "engine_version",
+              "parameter_set_id",
+              "deterministic",
+              "refdata",
+              "bazi_ruleset_id"
+            ],
+            "type": "object"
+          },
+          "Pillar": {
+            "additionalProperties": false,
+            "properties": {
+              "branch_index": {
+                "maximum": 11,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "stem_index": {
+                "maximum": 9,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "stem_index",
+              "branch_index"
+            ],
+            "type": "object"
+          },
+          "RefDataConfig": {
+            "additionalProperties": false,
+            "properties": {
+              "allow_network": {
+                "type": "boolean"
+              },
+              "eop_source_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ephemeris_id": {
+                "type": "string"
+              },
+              "leaps_source_id": {
+                "type": "string"
+              },
+              "refdata_mode": {
+                "enum": [
+                  "BUNDLED_OFFLINE",
+                  "LOCAL_MIRROR",
+                  "PROVIDER_BACKED"
+                ],
+                "type": "string"
+              },
+              "refdata_pack_id": {
+                "type": "string"
+              },
+              "refdata_root_path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "tzdb_version_id": {
+                "type": "string"
+              },
+              "verification_policy": {
+                "additionalProperties": false,
+                "properties": {
+                  "eop_redundancy_required": {
+                    "type": "boolean"
+                  },
+                  "ephemeris_hash_required": {
+                    "type": "boolean"
+                  },
+                  "leaps_expiry_enforced": {
+                    "type": "boolean"
+                  },
+                  "tzdb_gpg_required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "tzdb_gpg_required",
+                  "ephemeris_hash_required",
+                  "eop_redundancy_required",
+                  "leaps_expiry_enforced"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "refdata_pack_id",
+              "refdata_mode",
+              "allow_network",
+              "ephemeris_id",
+              "tzdb_version_id",
+              "leaps_source_id",
+              "verification_policy"
+            ],
+            "type": "object"
+          },
+          "RefDataManifest": {
+            "additionalProperties": true,
+            "properties": {
+              "artifacts": {
+                "type": "array"
+              },
+              "pack_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pack_id",
+              "artifacts"
+            ],
+            "type": "object"
+          }
+        },
+        "properties": {
+          "bazi_pillars_override": {
+            "additionalProperties": false,
+            "description": "Optional override of BaZi pillars (skips anchor dependency).",
+            "properties": {
+              "pillars": {
+                "items": {
+                  "$ref": "#/definitions/Pillar"
+                },
+                "maxItems": 4,
+                "minItems": 4,
+                "type": "array"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "birth_event": {
+            "$ref": "#/definitions/BirthEvent"
+          },
+          "engine_config": {
+            "$ref": "#/definitions/EngineConfig"
+          },
+          "now_utc_override": {
+            "description": "For deterministic tests: fixed 'now' used for expiry checks.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "positions_override": {
+            "additionalProperties": false,
+            "description": "Optional override of western body positions (skips ephemeris).",
+            "properties": {
+              "bodies": {
+                "items": {
+                  "$ref": "#/definitions/BodyPosition"
+                },
+                "type": "array"
+              },
+              "time_scale": {
+                "enum": [
+                  "TT",
+                  "UTC",
+                  "UT1"
+                ],
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "refdata_manifest_inline": {
+            "$ref": "#/definitions/RefDataManifest"
+          },
+          "refdata_pack_id": {
+            "type": "string"
+          },
+          "ruleset_id": {
+            "type": "string"
+          },
+          "ruleset_inline": {
+            "$ref": "#/definitions/BaZiRuleset"
+          },
+          "validate_level": {
+            "default": "FULL",
+            "enum": [
+              "BASIC",
+              "FULL"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "engine_config"
+        ],
+        "title": "ValidateRequest",
+        "type": "object"
+      },
+      "ValidateResponse": {
+        "additionalProperties": false,
+        "definitions": {
+          "ArtifactEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "expires_utc": {
+                "format": "date-time",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "hash_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "logical_id": {
+                "type": "string"
+              },
+              "notes": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "present": {
+                "type": "boolean"
+              },
+              "signature_ok": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "stale": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "verified": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "logical_id",
+              "present"
+            ],
+            "type": "object"
+          },
+          "ComponentStatus": {
+            "additionalProperties": false,
+            "properties": {
+              "notes": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "status": {
+                "enum": [
+                  "OK",
+                  "DEGRADED",
+                  "FAIL"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "type": "object"
+          },
+          "DiscretizationEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "boundary_distance_deg": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "branch_coordinate_convention": {
+                "enum": [
+                  "SHIFT_BOUNDARIES",
+                  "SHIFT_LONGITUDES"
+                ],
+                "type": "string"
+              },
+              "classification_unstable": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "interval_convention": {
+                "enum": [
+                  "HALF_OPEN"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "interval_convention",
+              "branch_coordinate_convention"
+            ],
+            "type": "object"
+          },
+          "EphemerisEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "bodies": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "ephemeris_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "time_scale": {
+                "enum": [
+                  "TT",
+                  "TDB",
+                  "UTC",
+                  "UT1",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "ErrorCode": {
+            "enum": [
+              "REFDATA_NETWORK_FORBIDDEN",
+              "REFDATA_MANIFEST_MISSING",
+              "EPHEMERIS_HASH_MISMATCH",
+              "EPHEMERIS_MISSING",
+              "TZDB_SIGNATURE_INVALID",
+              "LEAP_SECONDS_FILE_EXPIRED",
+              "MISSING_TT",
+              "EOP_MISSING",
+              "EOP_STALE",
+              "EOP_PREDICTED_REGION_USED",
+              "DST_AMBIGUOUS_LOCAL_TIME",
+              "DST_NONEXISTENT_LOCAL_TIME",
+              "INCONSISTENT_BRANCH_ORIGIN_FOR_SHIFTED_LONGITUDES",
+              "MISSING_DAY_CYCLE_ANCHOR",
+              "MISSING_AYANAMSA_ID",
+              "INTERP_DERIVATION_EMPTY",
+              "INTERP_LINT_FAIL"
+            ],
+            "type": "string"
+          },
+          "FramesEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "ayanamsa_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "epoch_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "obliquity_model_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "precession_model_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "zodiac_mode": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "InterpEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "lint_status": {
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "statements_returned": {
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "Issue": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "$ref": "#/definitions/ErrorCode"
+              },
+              "details": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "path": {
+                "description": "JSON pointer-like location, if applicable.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "severity": {
+                "default": "ERROR",
+                "enum": [
+                  "ERROR",
+                  "WARNING"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          },
+          "RefDataEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "allow_network": {
+                "type": "boolean"
+              },
+              "artifacts": {
+                "additionalProperties": false,
+                "properties": {
+                  "eop": {
+                    "$ref": "#/definitions/ArtifactEvidence"
+                  },
+                  "ephemeris": {
+                    "$ref": "#/definitions/ArtifactEvidence"
+                  },
+                  "leaps": {
+                    "$ref": "#/definitions/ArtifactEvidence"
+                  },
+                  "tzdb": {
+                    "$ref": "#/definitions/ArtifactEvidence"
+                  }
+                },
+                "type": "object"
+              },
+              "mode": {
+                "enum": [
+                  "BUNDLED_OFFLINE",
+                  "LOCAL_MIRROR",
+                  "PROVIDER_BACKED"
+                ],
+                "type": "string"
+              },
+              "refdata_pack_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "refdata_pack_id",
+              "allow_network",
+              "mode",
+              "artifacts"
+            ],
+            "type": "object"
+          },
+          "ReproEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "config_fingerprint": {
+                "type": "string"
+              },
+              "float_format_policy": {
+                "additionalProperties": false,
+                "properties": {
+                  "fixed_decimals": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "mode": {
+                    "enum": [
+                      "fixed",
+                      "shortest_roundtrip"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "json_canonicalization": {
+                "additionalProperties": false,
+                "properties": {
+                  "sorted_keys": {
+                    "type": "boolean"
+                  },
+                  "utf8": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "config_fingerprint",
+              "float_format_policy",
+              "json_canonicalization"
+            ],
+            "type": "object"
+          },
+          "TimeEvidence": {
+            "additionalProperties": false,
+            "properties": {
+              "dst_policy": {
+                "enum": [
+                  "error",
+                  "earlier",
+                  "later"
+                ],
+                "type": "string"
+              },
+              "eot_provenance": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "time_standard": {
+                "enum": [
+                  "CIVIL",
+                  "LMT",
+                  "TLST"
+                ],
+                "type": "string"
+              },
+              "tlst_quality": {
+                "enum": [
+                  "ok",
+                  "degraded",
+                  "missing"
+                ],
+                "type": "string"
+              },
+              "tt_quality": {
+                "enum": [
+                  "ok",
+                  "missing"
+                ],
+                "type": "string"
+              },
+              "uncertainty_budget_sec": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ut1_quality": {
+                "enum": [
+                  "ok",
+                  "predicted",
+                  "missing"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "time_standard",
+              "dst_policy",
+              "ut1_quality",
+              "tt_quality",
+              "tlst_quality"
+            ],
+            "type": "object"
+          }
+        },
+        "properties": {
+          "compliance_components": {
+            "additionalProperties": false,
+            "properties": {
+              "DISCRETIZATION": {
+                "$ref": "#/definitions/ComponentStatus"
+              },
+              "EPHEMERIS": {
+                "$ref": "#/definitions/ComponentStatus"
+              },
+              "FRAMES": {
+                "$ref": "#/definitions/ComponentStatus"
+              },
+              "INTERPRETATION_POLICY": {
+                "$ref": "#/definitions/ComponentStatus"
+              },
+              "REFDATA": {
+                "$ref": "#/definitions/ComponentStatus"
+              },
+              "REPRODUCIBILITY": {
+                "$ref": "#/definitions/ComponentStatus"
+              },
+              "TIME": {
+                "$ref": "#/definitions/ComponentStatus"
+              }
+            },
+            "required": [
+              "REFDATA",
+              "TIME",
+              "FRAMES",
+              "EPHEMERIS",
+              "DISCRETIZATION",
+              "REPRODUCIBILITY",
+              "INTERPRETATION_POLICY"
+            ],
+            "type": "object"
+          },
+          "compliance_status": {
+            "enum": [
+              "COMPLIANT",
+              "DEGRADED",
+              "NON_COMPLIANT"
+            ],
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/definitions/Issue"
+            },
+            "type": "array"
+          },
+          "evidence": {
+            "additionalProperties": false,
+            "properties": {
+              "discretization": {
+                "$ref": "#/definitions/DiscretizationEvidence"
+              },
+              "ephemeris": {
+                "$ref": "#/definitions/EphemerisEvidence"
+              },
+              "frames": {
+                "$ref": "#/definitions/FramesEvidence"
+              },
+              "interpretation": {
+                "$ref": "#/definitions/InterpEvidence"
+              },
+              "refdata": {
+                "$ref": "#/definitions/RefDataEvidence"
+              },
+              "reproducibility": {
+                "$ref": "#/definitions/ReproEvidence"
+              },
+              "time": {
+                "$ref": "#/definitions/TimeEvidence"
+              }
+            },
+            "required": [
+              "refdata",
+              "time",
+              "discretization",
+              "reproducibility"
+            ],
+            "type": "object"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/definitions/Issue"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "compliance_status",
+          "compliance_components",
+          "errors",
+          "warnings",
+          "evidence"
+        ],
+        "title": "ValidateResponse",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "error",
+          "message"
+        ]
+      }
+    }
+  }
+}

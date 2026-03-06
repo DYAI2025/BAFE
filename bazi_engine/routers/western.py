@@ -4,7 +4,7 @@ routers/western.py — POST /calculate/western
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -25,7 +25,24 @@ class WesternRequest(BaseModel):
     nonexistentTime: NonexistentTimePolicy = Field("error")
 
 
-@router.post("/western")
+class WesternBodyResponse(BaseModel):
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
+    speed: Optional[float] = None
+    distance: Optional[float] = None
+    zodiac_sign: Optional[int] = None
+    degree_in_sign: Optional[float] = None
+    is_retrograde: bool = False
+
+
+class WesternResponse(BaseModel):
+    jd_ut: float
+    bodies: Dict[str, WesternBodyResponse]
+    houses: Optional[Dict[str, float]] = None
+    angles: Optional[Dict[str, float]] = None
+
+
+@router.post("/western", response_model=WesternResponse)
 def calculate_western_endpoint(req: WesternRequest) -> Dict[str, Any]:
     try:
         dt_local, _ = resolve_local_iso(
