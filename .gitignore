@@ -55,3 +55,4 @@ Thumbs.db
 *.se1
 *.bsp
 .claude/
+generated/

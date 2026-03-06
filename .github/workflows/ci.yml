@@ -83,3 +83,24 @@ jobs:
 
       - name: Run ruff check
         run: ruff check bazi_engine/ --output-format=github
+
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate TypeScript client
+        uses: docker://openapitools/openapi-generator-cli
+        with:
+          args: generate -i spec/openapi/openapi.json -g typescript-fetch -o /github/workspace/generated/ts-client
+
+      - name: Compile generated client
+        run: |
+          cd generated/ts-client
+          npm install
+          npx tsc --noEmit
