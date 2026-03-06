@@ -839,6 +839,16 @@
           },
           "dates": {
             "$ref": "#/components/schemas/BaziDates"
+          },
+          "transition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaziTransition"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -849,6 +859,40 @@
           "dates"
         ],
         "title": "BaziSection"
+      },
+      "BaziTransition": {
+        "properties": {
+          "solar_year": {
+            "type": "integer",
+            "title": "Solar Year"
+          },
+          "is_before_lichun": {
+            "type": "boolean",
+            "title": "Is Before Lichun"
+          },
+          "lichun_year_start": {
+            "type": "string",
+            "title": "Lichun Year Start"
+          },
+          "lichun_next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lichun Next"
+          }
+        },
+        "type": "object",
+        "required": [
+          "solar_year",
+          "is_before_lichun",
+          "lichun_year_start"
+        ],
+        "title": "BaziTransition"
       },
       "BuildResponse": {
         "properties": {
@@ -2242,388 +2286,386 @@
         ],
         "title": "WxResponse"
       },
-      "ValidateRequest": {
+      "BaZiRuleset": {
+        "additionalProperties": true,
+        "properties": {
+          "ruleset_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ruleset_id"
+        ],
+        "type": "object"
+      },
+      "BirthEvent": {
         "additionalProperties": false,
-        "definitions": {
-          "BaZiRuleset": {
-            "additionalProperties": true,
-            "properties": {
-              "ruleset_id": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "ruleset_id"
+        "properties": {
+          "dst_policy": {
+            "enum": [
+              "error",
+              "earlier",
+              "later",
+              null
             ],
-            "type": "object"
+            "type": [
+              "string",
+              "null"
+            ]
           },
-          "BirthEvent": {
+          "geo_lat_deg": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          },
+          "geo_lon_deg": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          "local_datetime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "tz_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tz_offset_sec": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "local_datetime",
+          "geo_lon_deg",
+          "geo_lat_deg"
+        ],
+        "type": "object"
+      },
+      "BodyPosition": {
+        "additionalProperties": false,
+        "properties": {
+          "beta_deg": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "lambda_deg": {
+            "exclusiveMaximum": 360,
+            "minimum": 0,
+            "type": "number"
+          },
+          "retrograde": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "speed_deg_per_day": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "body",
+          "lambda_deg"
+        ],
+        "type": "object"
+      },
+      "EngineConfig": {
+        "additionalProperties": true,
+        "properties": {
+          "ayanamsa_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bazi_ruleset_id": {
+            "type": "string"
+          },
+          "branch_coordinate_convention": {
+            "default": "SHIFT_BOUNDARIES",
+            "enum": [
+              "SHIFT_BOUNDARIES",
+              "SHIFT_LONGITUDES"
+            ],
+            "type": "string"
+          },
+          "branch_width_deg": {
+            "default": 30.0,
+            "type": "number"
+          },
+          "compliance_mode": {
+            "default": "RELAXED",
+            "enum": [
+              "STRICT",
+              "RELAXED",
+              "DEV"
+            ],
+            "type": "string"
+          },
+          "deterministic": {
+            "const": true,
+            "type": "boolean"
+          },
+          "dst_policy": {
+            "default": "error",
+            "enum": [
+              "error",
+              "earlier",
+              "later"
+            ],
+            "type": "string"
+          },
+          "engine_version": {
+            "type": "string"
+          },
+          "epoch_id": {
+            "type": "string"
+          },
+          "float_format_policy": {
             "additionalProperties": false,
             "properties": {
-              "dst_policy": {
-                "enum": [
-                  "error",
-                  "earlier",
-                  "later",
-                  null
-                ],
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "geo_lat_deg": {
-                "maximum": 90,
-                "minimum": -90,
-                "type": "number"
-              },
-              "geo_lon_deg": {
-                "maximum": 180,
-                "minimum": -180,
-                "type": "number"
-              },
-              "local_datetime": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "tz_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "tz_offset_sec": {
+              "fixed_decimals": {
+                "maximum": 18,
+                "minimum": 0,
                 "type": [
                   "integer",
                   "null"
                 ]
+              },
+              "mode": {
+                "default": "shortest_roundtrip",
+                "enum": [
+                  "fixed",
+                  "shortest_roundtrip"
+                ],
+                "type": "string"
               }
             },
-            "required": [
-              "local_datetime",
-              "geo_lon_deg",
-              "geo_lat_deg"
-            ],
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
-          "BodyPosition": {
+          "interval_convention": {
+            "default": "HALF_OPEN",
+            "enum": [
+              "HALF_OPEN"
+            ],
+            "type": "string"
+          },
+          "json_canonicalization": {
             "additionalProperties": false,
             "properties": {
-              "beta_deg": {
-                "maximum": 90,
-                "minimum": -90,
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "body": {
-                "type": "string"
-              },
-              "lambda_deg": {
-                "exclusiveMaximum": 360,
-                "minimum": 0,
-                "type": "number"
-              },
-              "retrograde": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
-              },
-              "speed_deg_per_day": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              }
-            },
-            "required": [
-              "body",
-              "lambda_deg"
-            ],
-            "type": "object"
-          },
-          "EngineConfig": {
-            "additionalProperties": true,
-            "properties": {
-              "ayanamsa_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "bazi_ruleset_id": {
-                "type": "string"
-              },
-              "branch_coordinate_convention": {
-                "default": "SHIFT_BOUNDARIES",
-                "enum": [
-                  "SHIFT_BOUNDARIES",
-                  "SHIFT_LONGITUDES"
-                ],
-                "type": "string"
-              },
-              "branch_width_deg": {
-                "default": 30.0,
-                "type": "number"
-              },
-              "compliance_mode": {
-                "default": "RELAXED",
-                "enum": [
-                  "STRICT",
-                  "RELAXED",
-                  "DEV"
-                ],
-                "type": "string"
-              },
-              "deterministic": {
-                "const": true,
+              "sorted_keys": {
+                "default": true,
                 "type": "boolean"
               },
-              "dst_policy": {
-                "default": "error",
-                "enum": [
-                  "error",
-                  "earlier",
-                  "later"
-                ],
-                "type": "string"
-              },
-              "engine_version": {
-                "type": "string"
-              },
-              "epoch_id": {
-                "type": "string"
-              },
-              "float_format_policy": {
-                "additionalProperties": false,
-                "properties": {
-                  "fixed_decimals": {
-                    "maximum": 18,
-                    "minimum": 0,
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  },
-                  "mode": {
-                    "default": "shortest_roundtrip",
-                    "enum": [
-                      "fixed",
-                      "shortest_roundtrip"
-                    ],
-                    "type": "string"
-                  }
-                },
-                "type": [
-                  "object",
-                  "null"
-                ]
-              },
-              "interval_convention": {
-                "default": "HALF_OPEN",
-                "enum": [
-                  "HALF_OPEN"
-                ],
-                "type": "string"
-              },
-              "json_canonicalization": {
-                "additionalProperties": false,
-                "properties": {
-                  "sorted_keys": {
-                    "default": true,
-                    "type": "boolean"
-                  },
-                  "utf8": {
-                    "default": true,
-                    "type": "boolean"
-                  }
-                },
-                "type": [
-                  "object",
-                  "null"
-                ]
-              },
-              "month_boundary_mode": {
-                "default": "JIEQI_CROSSING",
-                "enum": [
-                  "JIEQI_CROSSING",
-                  "APEX_SEGMENTS"
-                ],
-                "type": "string"
-              },
-              "month_start_solar_longitude_deg": {
-                "default": 315.0,
-                "type": "number"
-              },
-              "parameter_set_id": {
-                "type": "string"
-              },
-              "phi_apex_offset_deg": {
-                "default": 15.0,
-                "type": "number"
-              },
-              "refdata": {
-                "$ref": "#/definitions/RefDataConfig"
-              },
-              "time_fallback_policy": {
-                "additionalProperties": false,
-                "properties": {
-                  "allow_compute_tlst_without_ut1": {
-                    "default": false,
-                    "type": "boolean"
-                  },
-                  "allow_tt_from_ut1_plus_deltat_override": {
-                    "default": false,
-                    "type": "boolean"
-                  }
-                },
-                "type": [
-                  "object",
-                  "null"
-                ]
-              },
-              "time_standard": {
-                "enum": [
-                  "CIVIL",
-                  "LMT",
-                  "TLST"
-                ],
-                "type": "string"
-              },
-              "zi_apex_deg": {
-                "default": 270.0,
-                "type": "number"
-              },
-              "zodiac_mode": {
-                "enum": [
-                  "tropical",
-                  "sidereal"
-                ],
-                "type": "string"
+              "utf8": {
+                "default": true,
+                "type": "boolean"
               }
             },
-            "required": [
-              "engine_version",
-              "parameter_set_id",
-              "deterministic",
-              "refdata",
-              "bazi_ruleset_id"
-            ],
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
-          "Pillar": {
+          "month_boundary_mode": {
+            "default": "JIEQI_CROSSING",
+            "enum": [
+              "JIEQI_CROSSING",
+              "APEX_SEGMENTS"
+            ],
+            "type": "string"
+          },
+          "month_start_solar_longitude_deg": {
+            "default": 315.0,
+            "type": "number"
+          },
+          "parameter_set_id": {
+            "type": "string"
+          },
+          "phi_apex_offset_deg": {
+            "default": 15.0,
+            "type": "number"
+          },
+          "refdata": {
+            "$ref": "#/components/schemas/RefDataConfig"
+          },
+          "time_fallback_policy": {
             "additionalProperties": false,
             "properties": {
-              "branch_index": {
-                "maximum": 11,
-                "minimum": 0,
-                "type": "integer"
-              },
-              "stem_index": {
-                "maximum": 9,
-                "minimum": 0,
-                "type": "integer"
-              }
-            },
-            "required": [
-              "stem_index",
-              "branch_index"
-            ],
-            "type": "object"
-          },
-          "RefDataConfig": {
-            "additionalProperties": false,
-            "properties": {
-              "allow_network": {
+              "allow_compute_tlst_without_ut1": {
+                "default": false,
                 "type": "boolean"
               },
-              "eop_source_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "ephemeris_id": {
-                "type": "string"
-              },
-              "leaps_source_id": {
-                "type": "string"
-              },
-              "refdata_mode": {
-                "enum": [
-                  "BUNDLED_OFFLINE",
-                  "LOCAL_MIRROR",
-                  "PROVIDER_BACKED"
-                ],
-                "type": "string"
-              },
-              "refdata_pack_id": {
-                "type": "string"
-              },
-              "refdata_root_path": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "tzdb_version_id": {
-                "type": "string"
-              },
-              "verification_policy": {
-                "additionalProperties": false,
-                "properties": {
-                  "eop_redundancy_required": {
-                    "type": "boolean"
-                  },
-                  "ephemeris_hash_required": {
-                    "type": "boolean"
-                  },
-                  "leaps_expiry_enforced": {
-                    "type": "boolean"
-                  },
-                  "tzdb_gpg_required": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "tzdb_gpg_required",
-                  "ephemeris_hash_required",
-                  "eop_redundancy_required",
-                  "leaps_expiry_enforced"
-                ],
-                "type": "object"
+              "allow_tt_from_ut1_plus_deltat_override": {
+                "default": false,
+                "type": "boolean"
               }
             },
-            "required": [
-              "refdata_pack_id",
-              "refdata_mode",
-              "allow_network",
-              "ephemeris_id",
-              "tzdb_version_id",
-              "leaps_source_id",
-              "verification_policy"
-            ],
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
-          "RefDataManifest": {
-            "additionalProperties": true,
+          "time_standard": {
+            "enum": [
+              "CIVIL",
+              "LMT",
+              "TLST"
+            ],
+            "type": "string"
+          },
+          "zi_apex_deg": {
+            "default": 270.0,
+            "type": "number"
+          },
+          "zodiac_mode": {
+            "enum": [
+              "tropical",
+              "sidereal"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "engine_version",
+          "parameter_set_id",
+          "deterministic",
+          "refdata",
+          "bazi_ruleset_id"
+        ],
+        "type": "object"
+      },
+      "Pillar": {
+        "additionalProperties": false,
+        "properties": {
+          "branch_index": {
+            "maximum": 11,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "stem_index": {
+            "maximum": 9,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "stem_index",
+          "branch_index"
+        ],
+        "type": "object"
+      },
+      "RefDataConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "allow_network": {
+            "type": "boolean"
+          },
+          "eop_source_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ephemeris_id": {
+            "type": "string"
+          },
+          "leaps_source_id": {
+            "type": "string"
+          },
+          "refdata_mode": {
+            "enum": [
+              "BUNDLED_OFFLINE",
+              "LOCAL_MIRROR",
+              "PROVIDER_BACKED"
+            ],
+            "type": "string"
+          },
+          "refdata_pack_id": {
+            "type": "string"
+          },
+          "refdata_root_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tzdb_version_id": {
+            "type": "string"
+          },
+          "verification_policy": {
+            "additionalProperties": false,
             "properties": {
-              "artifacts": {
-                "type": "array"
+              "eop_redundancy_required": {
+                "type": "boolean"
               },
-              "pack_id": {
-                "type": "string"
+              "ephemeris_hash_required": {
+                "type": "boolean"
+              },
+              "leaps_expiry_enforced": {
+                "type": "boolean"
+              },
+              "tzdb_gpg_required": {
+                "type": "boolean"
               }
             },
             "required": [
-              "pack_id",
-              "artifacts"
+              "tzdb_gpg_required",
+              "ephemeris_hash_required",
+              "eop_redundancy_required",
+              "leaps_expiry_enforced"
             ],
             "type": "object"
           }
         },
+        "required": [
+          "refdata_pack_id",
+          "refdata_mode",
+          "allow_network",
+          "ephemeris_id",
+          "tzdb_version_id",
+          "leaps_source_id",
+          "verification_policy"
+        ],
+        "type": "object"
+      },
+      "RefDataManifest": {
+        "additionalProperties": true,
+        "properties": {
+          "artifacts": {
+            "type": "array"
+          },
+          "pack_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_id",
+          "artifacts"
+        ],
+        "type": "object"
+      },
+      "ValidateRequest": {
+        "additionalProperties": false,
         "properties": {
           "bazi_pillars_override": {
             "additionalProperties": false,
@@ -2631,7 +2673,7 @@
             "properties": {
               "pillars": {
                 "items": {
-                  "$ref": "#/definitions/Pillar"
+                  "$ref": "#/components/schemas/Pillar"
                 },
                 "maxItems": 4,
                 "minItems": 4,
@@ -2644,10 +2686,10 @@
             ]
           },
           "birth_event": {
-            "$ref": "#/definitions/BirthEvent"
+            "$ref": "#/components/schemas/BirthEvent"
           },
           "engine_config": {
-            "$ref": "#/definitions/EngineConfig"
+            "$ref": "#/components/schemas/EngineConfig"
           },
           "now_utc_override": {
             "description": "For deterministic tests: fixed 'now' used for expiry checks.",
@@ -2663,7 +2705,7 @@
             "properties": {
               "bodies": {
                 "items": {
-                  "$ref": "#/definitions/BodyPosition"
+                  "$ref": "#/components/schemas/BodyPosition"
                 },
                 "type": "array"
               },
@@ -2682,7 +2724,7 @@
             ]
           },
           "refdata_manifest_inline": {
-            "$ref": "#/definitions/RefDataManifest"
+            "$ref": "#/components/schemas/RefDataManifest"
           },
           "refdata_pack_id": {
             "type": "string"
@@ -2691,7 +2733,7 @@
             "type": "string"
           },
           "ruleset_inline": {
-            "$ref": "#/definitions/BaZiRuleset"
+            "$ref": "#/components/schemas/BaZiRuleset"
           },
           "validate_level": {
             "default": "FULL",
@@ -2708,448 +2750,446 @@
         "title": "ValidateRequest",
         "type": "object"
       },
-      "ValidateResponse": {
+      "ArtifactEvidence": {
         "additionalProperties": false,
-        "definitions": {
-          "ArtifactEvidence": {
-            "additionalProperties": false,
-            "properties": {
-              "expires_utc": {
-                "format": "date-time",
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "hash_sha256": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "logical_id": {
-                "type": "string"
-              },
-              "notes": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              "present": {
-                "type": "boolean"
-              },
-              "signature_ok": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
-              },
-              "stale": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
-              },
-              "verified": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
-              }
-            },
-            "required": [
-              "logical_id",
-              "present"
-            ],
-            "type": "object"
+        "properties": {
+          "expires_utc": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
-          "ComponentStatus": {
-            "additionalProperties": false,
-            "properties": {
-              "notes": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              "status": {
-                "enum": [
-                  "OK",
-                  "DEGRADED",
-                  "FAIL"
-                ],
-                "type": "string"
-              }
-            },
-            "required": [
-              "status"
-            ],
-            "type": "object"
+          "hash_sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
-          "DiscretizationEvidence": {
-            "additionalProperties": false,
-            "properties": {
-              "boundary_distance_deg": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "branch_coordinate_convention": {
-                "enum": [
-                  "SHIFT_BOUNDARIES",
-                  "SHIFT_LONGITUDES"
-                ],
-                "type": "string"
-              },
-              "classification_unstable": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
-              },
-              "interval_convention": {
-                "enum": [
-                  "HALF_OPEN"
-                ],
-                "type": "string"
-              }
-            },
-            "required": [
-              "interval_convention",
-              "branch_coordinate_convention"
-            ],
-            "type": "object"
+          "logical_id": {
+            "type": "string"
           },
-          "EphemerisEvidence": {
-            "additionalProperties": false,
-            "properties": {
-              "bodies": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              "ephemeris_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "time_scale": {
-                "enum": [
-                  "TT",
-                  "TDB",
-                  "UTC",
-                  "UT1",
-                  null
-                ],
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
+          "notes": {
+            "items": {
+              "type": "string"
             },
-            "type": "object"
+            "type": "array"
           },
-          "ErrorCode": {
+          "present": {
+            "type": "boolean"
+          },
+          "signature_ok": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "stale": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "verified": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "logical_id",
+          "present"
+        ],
+        "type": "object"
+      },
+      "ComponentStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
             "enum": [
-              "REFDATA_NETWORK_FORBIDDEN",
-              "REFDATA_MANIFEST_MISSING",
-              "EPHEMERIS_HASH_MISMATCH",
-              "EPHEMERIS_MISSING",
-              "TZDB_SIGNATURE_INVALID",
-              "LEAP_SECONDS_FILE_EXPIRED",
-              "MISSING_TT",
-              "EOP_MISSING",
-              "EOP_STALE",
-              "EOP_PREDICTED_REGION_USED",
-              "DST_AMBIGUOUS_LOCAL_TIME",
-              "DST_NONEXISTENT_LOCAL_TIME",
-              "INCONSISTENT_BRANCH_ORIGIN_FOR_SHIFTED_LONGITUDES",
-              "MISSING_DAY_CYCLE_ANCHOR",
-              "MISSING_AYANAMSA_ID",
-              "INTERP_DERIVATION_EMPTY",
-              "INTERP_LINT_FAIL"
+              "OK",
+              "DEGRADED",
+              "FAIL"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "DiscretizationEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "boundary_distance_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "branch_coordinate_convention": {
+            "enum": [
+              "SHIFT_BOUNDARIES",
+              "SHIFT_LONGITUDES"
             ],
             "type": "string"
           },
-          "FramesEvidence": {
+          "classification_unstable": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "interval_convention": {
+            "enum": [
+              "HALF_OPEN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "interval_convention",
+          "branch_coordinate_convention"
+        ],
+        "type": "object"
+      },
+      "EphemerisEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "bodies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ephemeris_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "time_scale": {
+            "enum": [
+              "TT",
+              "TDB",
+              "UTC",
+              "UT1",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "ErrorCode": {
+        "enum": [
+          "REFDATA_NETWORK_FORBIDDEN",
+          "REFDATA_MANIFEST_MISSING",
+          "EPHEMERIS_HASH_MISMATCH",
+          "EPHEMERIS_MISSING",
+          "TZDB_SIGNATURE_INVALID",
+          "LEAP_SECONDS_FILE_EXPIRED",
+          "MISSING_TT",
+          "EOP_MISSING",
+          "EOP_STALE",
+          "EOP_PREDICTED_REGION_USED",
+          "DST_AMBIGUOUS_LOCAL_TIME",
+          "DST_NONEXISTENT_LOCAL_TIME",
+          "INCONSISTENT_BRANCH_ORIGIN_FOR_SHIFTED_LONGITUDES",
+          "MISSING_DAY_CYCLE_ANCHOR",
+          "MISSING_AYANAMSA_ID",
+          "INTERP_DERIVATION_EMPTY",
+          "INTERP_LINT_FAIL"
+        ],
+        "type": "string"
+      },
+      "FramesEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "ayanamsa_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "epoch_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "obliquity_model_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "precession_model_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "zodiac_mode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "InterpEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "lint_status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statements_returned": {
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "Issue": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "details": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "description": "JSON pointer-like location, if applicable.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "default": "ERROR",
+            "enum": [
+              "ERROR",
+              "WARNING"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "RefDataEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "allow_network": {
+            "type": "boolean"
+          },
+          "artifacts": {
             "additionalProperties": false,
             "properties": {
-              "ayanamsa_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+              "eop": {
+                "$ref": "#/components/schemas/ArtifactEvidence"
               },
-              "epoch_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+              "ephemeris": {
+                "$ref": "#/components/schemas/ArtifactEvidence"
               },
-              "obliquity_model_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+              "leaps": {
+                "$ref": "#/components/schemas/ArtifactEvidence"
               },
-              "precession_model_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "zodiac_mode": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+              "tzdb": {
+                "$ref": "#/components/schemas/ArtifactEvidence"
               }
             },
             "type": "object"
           },
-          "InterpEvidence": {
+          "mode": {
+            "enum": [
+              "BUNDLED_OFFLINE",
+              "LOCAL_MIRROR",
+              "PROVIDER_BACKED"
+            ],
+            "type": "string"
+          },
+          "refdata_pack_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refdata_pack_id",
+          "allow_network",
+          "mode",
+          "artifacts"
+        ],
+        "type": "object"
+      },
+      "ReproEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "config_fingerprint": {
+            "type": "string"
+          },
+          "float_format_policy": {
             "additionalProperties": false,
             "properties": {
-              "lint_status": {
-                "enum": [
-                  "PASS",
-                  "FAIL",
-                  null
-                ],
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "statements_returned": {
-                "minimum": 0,
+              "fixed_decimals": {
                 "type": [
                   "integer",
                   "null"
                 ]
-              }
-            },
-            "type": "object"
-          },
-          "Issue": {
-            "additionalProperties": false,
-            "properties": {
-              "code": {
-                "$ref": "#/definitions/ErrorCode"
-              },
-              "details": {
-                "type": [
-                  "object",
-                  "null"
-                ]
-              },
-              "message": {
-                "type": "string"
-              },
-              "path": {
-                "description": "JSON pointer-like location, if applicable.",
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "severity": {
-                "default": "ERROR",
-                "enum": [
-                  "ERROR",
-                  "WARNING"
-                ],
-                "type": "string"
-              }
-            },
-            "required": [
-              "code",
-              "message"
-            ],
-            "type": "object"
-          },
-          "RefDataEvidence": {
-            "additionalProperties": false,
-            "properties": {
-              "allow_network": {
-                "type": "boolean"
-              },
-              "artifacts": {
-                "additionalProperties": false,
-                "properties": {
-                  "eop": {
-                    "$ref": "#/definitions/ArtifactEvidence"
-                  },
-                  "ephemeris": {
-                    "$ref": "#/definitions/ArtifactEvidence"
-                  },
-                  "leaps": {
-                    "$ref": "#/definitions/ArtifactEvidence"
-                  },
-                  "tzdb": {
-                    "$ref": "#/definitions/ArtifactEvidence"
-                  }
-                },
-                "type": "object"
               },
               "mode": {
                 "enum": [
-                  "BUNDLED_OFFLINE",
-                  "LOCAL_MIRROR",
-                  "PROVIDER_BACKED"
+                  "fixed",
+                  "shortest_roundtrip"
                 ],
-                "type": "string"
-              },
-              "refdata_pack_id": {
                 "type": "string"
               }
             },
-            "required": [
-              "refdata_pack_id",
-              "allow_network",
-              "mode",
-              "artifacts"
-            ],
             "type": "object"
           },
-          "ReproEvidence": {
+          "json_canonicalization": {
             "additionalProperties": false,
             "properties": {
-              "config_fingerprint": {
-                "type": "string"
+              "sorted_keys": {
+                "type": "boolean"
               },
-              "float_format_policy": {
-                "additionalProperties": false,
-                "properties": {
-                  "fixed_decimals": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  },
-                  "mode": {
-                    "enum": [
-                      "fixed",
-                      "shortest_roundtrip"
-                    ],
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              },
-              "json_canonicalization": {
-                "additionalProperties": false,
-                "properties": {
-                  "sorted_keys": {
-                    "type": "boolean"
-                  },
-                  "utf8": {
-                    "type": "boolean"
-                  }
-                },
-                "type": "object"
+              "utf8": {
+                "type": "boolean"
               }
             },
-            "required": [
-              "config_fingerprint",
-              "float_format_policy",
-              "json_canonicalization"
-            ],
-            "type": "object"
-          },
-          "TimeEvidence": {
-            "additionalProperties": false,
-            "properties": {
-              "dst_policy": {
-                "enum": [
-                  "error",
-                  "earlier",
-                  "later"
-                ],
-                "type": "string"
-              },
-              "eot_provenance": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "time_standard": {
-                "enum": [
-                  "CIVIL",
-                  "LMT",
-                  "TLST"
-                ],
-                "type": "string"
-              },
-              "tlst_quality": {
-                "enum": [
-                  "ok",
-                  "degraded",
-                  "missing"
-                ],
-                "type": "string"
-              },
-              "tt_quality": {
-                "enum": [
-                  "ok",
-                  "missing"
-                ],
-                "type": "string"
-              },
-              "uncertainty_budget_sec": {
-                "type": [
-                  "number",
-                  "null"
-                ]
-              },
-              "ut1_quality": {
-                "enum": [
-                  "ok",
-                  "predicted",
-                  "missing"
-                ],
-                "type": "string"
-              }
-            },
-            "required": [
-              "time_standard",
-              "dst_policy",
-              "ut1_quality",
-              "tt_quality",
-              "tlst_quality"
-            ],
             "type": "object"
           }
         },
+        "required": [
+          "config_fingerprint",
+          "float_format_policy",
+          "json_canonicalization"
+        ],
+        "type": "object"
+      },
+      "TimeEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "dst_policy": {
+            "enum": [
+              "error",
+              "earlier",
+              "later"
+            ],
+            "type": "string"
+          },
+          "eot_provenance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "time_standard": {
+            "enum": [
+              "CIVIL",
+              "LMT",
+              "TLST"
+            ],
+            "type": "string"
+          },
+          "tlst_quality": {
+            "enum": [
+              "ok",
+              "degraded",
+              "missing"
+            ],
+            "type": "string"
+          },
+          "tt_quality": {
+            "enum": [
+              "ok",
+              "missing"
+            ],
+            "type": "string"
+          },
+          "uncertainty_budget_sec": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ut1_quality": {
+            "enum": [
+              "ok",
+              "predicted",
+              "missing"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "time_standard",
+          "dst_policy",
+          "ut1_quality",
+          "tt_quality",
+          "tlst_quality"
+        ],
+        "type": "object"
+      },
+      "ValidateResponse": {
+        "additionalProperties": false,
         "properties": {
           "compliance_components": {
             "additionalProperties": false,
             "properties": {
               "DISCRETIZATION": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               },
               "EPHEMERIS": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               },
               "FRAMES": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               },
               "INTERPRETATION_POLICY": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               },
               "REFDATA": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               },
               "REPRODUCIBILITY": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               },
               "TIME": {
-                "$ref": "#/definitions/ComponentStatus"
+                "$ref": "#/components/schemas/ComponentStatus"
               }
             },
             "required": [
@@ -3173,7 +3213,7 @@
           },
           "errors": {
             "items": {
-              "$ref": "#/definitions/Issue"
+              "$ref": "#/components/schemas/Issue"
             },
             "type": "array"
           },
@@ -3181,25 +3221,25 @@
             "additionalProperties": false,
             "properties": {
               "discretization": {
-                "$ref": "#/definitions/DiscretizationEvidence"
+                "$ref": "#/components/schemas/DiscretizationEvidence"
               },
               "ephemeris": {
-                "$ref": "#/definitions/EphemerisEvidence"
+                "$ref": "#/components/schemas/EphemerisEvidence"
               },
               "frames": {
-                "$ref": "#/definitions/FramesEvidence"
+                "$ref": "#/components/schemas/FramesEvidence"
               },
               "interpretation": {
-                "$ref": "#/definitions/InterpEvidence"
+                "$ref": "#/components/schemas/InterpEvidence"
               },
               "refdata": {
-                "$ref": "#/definitions/RefDataEvidence"
+                "$ref": "#/components/schemas/RefDataEvidence"
               },
               "reproducibility": {
-                "$ref": "#/definitions/ReproEvidence"
+                "$ref": "#/components/schemas/ReproEvidence"
               },
               "time": {
-                "$ref": "#/definitions/TimeEvidence"
+                "$ref": "#/components/schemas/TimeEvidence"
               }
             },
             "required": [
@@ -3212,7 +3252,7 @@
           },
           "warnings": {
             "items": {
-              "$ref": "#/definitions/Issue"
+              "$ref": "#/components/schemas/Issue"
             },
             "type": "array"
           }

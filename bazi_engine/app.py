@@ -82,17 +82,36 @@ def _custom_openapi():  # type: ignore[no-untyped-def]
         routes=app.routes,
     )
 
-    # Load Draft-07 schemas and embed as OpenAPI components
+    # Load Draft-07 schemas, hoist definitions to components/schemas,
+    # and rewrite $ref paths from #/definitions/X to #/components/schemas/X
+    # so that openapi-generator and other tooling can resolve them.
     spec_dir = Path(__file__).resolve().parent.parent / "spec" / "schemas"
+    all_schemas = schema.setdefault("components", {}).setdefault("schemas", {})
+
+    def _rewrite_refs(obj: Any) -> Any:
+        """Recursively rewrite #/definitions/X → #/components/schemas/X."""
+        if isinstance(obj, dict):
+            return {
+                k: (v.replace("#/definitions/", "#/components/schemas/")
+                    if k == "$ref" and isinstance(v, str)
+                    else _rewrite_refs(v))
+                for k, v in obj.items()
+            }
+        if isinstance(obj, list):
+            return [_rewrite_refs(item) for item in obj]
+        return obj
+
     for name in ("ValidateRequest", "ValidateResponse"):
         path = spec_dir / f"{name}.schema.json"
         if path.exists():
             raw = json.loads(path.read_text(encoding="utf-8"))
-            # Strip Draft-07 meta-keys that are invalid in OpenAPI 3.1 component context
             raw.pop("$schema", None)
             raw.pop("$id", None)
-            # Inline definitions as-is (OpenAPI 3.1 supports full JSON Schema)
-            schema.setdefault("components", {}).setdefault("schemas", {})[name] = raw
+            # Hoist definitions to top-level components/schemas
+            for def_name, def_schema in raw.pop("definitions", {}).items():
+                if def_name not in all_schemas:
+                    all_schemas[def_name] = _rewrite_refs(def_schema)
+            all_schemas[name] = _rewrite_refs(raw)
 
     # Patch /validate path to reference the real schemas
     validate_path = schema.get("paths", {}).get("/validate", {}).get("post")

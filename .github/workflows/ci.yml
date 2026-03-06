@@ -103,4 +103,5 @@ jobs:
         run: |
           cd generated/ts-client
           npm install
-          npx tsc --noEmit
+          npm install typescript --save-dev
+          npx tsc --noEmit --esModuleInterop --target es2020 --module commonjs --moduleResolution node index.ts

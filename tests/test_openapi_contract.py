@@ -54,17 +54,16 @@ class TestValidateEndpointContract:
         resp_schema = validate["responses"]["200"]["content"]["application/json"]["schema"]
         assert resp_schema == {"$ref": "#/components/schemas/ValidateResponse"}
 
-    def test_validate_request_has_definitions(self, openapi_spec):
-        vr = openapi_spec["components"]["schemas"]["ValidateRequest"]
-        expected_defs = {"BirthEvent", "EngineConfig", "RefDataConfig", "Pillar"}
-        actual_defs = set(vr.get("definitions", {}).keys())
-        assert expected_defs.issubset(actual_defs), f"Missing: {expected_defs - actual_defs}"
+    def test_validate_request_definitions_hoisted(self, openapi_spec):
+        """Draft-07 definitions are hoisted to components/schemas for codegen compatibility."""
+        all_schemas = set(openapi_spec["components"]["schemas"].keys())
+        expected = {"BirthEvent", "EngineConfig", "RefDataConfig", "Pillar"}
+        assert expected.issubset(all_schemas), f"Missing: {expected - all_schemas}"
 
-    def test_validate_response_has_definitions(self, openapi_spec):
-        vr = openapi_spec["components"]["schemas"]["ValidateResponse"]
-        expected_defs = {"Issue", "ErrorCode", "ComponentStatus", "TimeEvidence"}
-        actual_defs = set(vr.get("definitions", {}).keys())
-        assert expected_defs.issubset(actual_defs), f"Missing: {expected_defs - actual_defs}"
+    def test_validate_response_definitions_hoisted(self, openapi_spec):
+        all_schemas = set(openapi_spec["components"]["schemas"].keys())
+        expected = {"Issue", "ErrorCode", "ComponentStatus", "TimeEvidence"}
+        assert expected.issubset(all_schemas), f"Missing: {expected - all_schemas}"
 
     def test_error_envelope_exists(self, openapi_spec):
         assert "ErrorEnvelope" in openapi_spec["components"]["schemas"]
