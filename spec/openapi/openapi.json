@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "BaZi Engine v2 API",
-    "description": "API for BaZi (Chinese Astrology) and Basic Western Astrology calculations.",
+    "title": "FuFirE — Fusion Firmament Engine",
+    "description": "FuFirE: Deterministic astronomical calculation engine for BaZi (Chinese Astrology) and Western Astrology with Wu-Xing fusion.",
     "version": "1.0.0-rc1-20260220"
   },
   "paths": {
@@ -1283,6 +1283,16 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine",
+            "default": "FuFirE"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": ""
           }
         },
         "type": "object",
