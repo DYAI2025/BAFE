@@ -4,8 +4,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
+
+from bazi_engine.transit import _detect_events
 
 from bazi_engine.app import app
 
@@ -186,6 +187,14 @@ class TestTransitNarrative:
         assert len(data["headline"]) > 0
         assert len(data["body"]) > 0
 
+    def test_pushworthy_event_sets_push_text(self):
+        """Priority <= 1 event should be pushworthy with headline as push_text."""
+        r = client.post("/transit/narrative", json={"transit_state": self.SAMPLE_STATE})
+        data = r.json()
+        assert data["pushworthy"] is True
+        assert data["push_text"] == data["headline"]
+        assert len(data["push_text"]) > 0
+
     def test_no_events_still_generates_text(self):
         state = {**self.SAMPLE_STATE, "events": []}
         r = client.post("/transit/narrative", json={"transit_state": state})
@@ -229,3 +238,62 @@ class TestTransitTimeline:
         assert r.status_code == 422
         r = client.get("/transit/timeline?days=31")
         assert r.status_code == 422
+
+
+class TestDominanceShift:
+    """dominance_shift event detection with guard clause (Addendum 3.4)."""
+
+    # Fake transit_now for unit-testing _detect_events directly
+    FAKE_TRANSIT = {
+        "planets": {
+            "sun": {"sector": 3, "sign": "cancer"},
+            "moon": {"sector": 6, "sign": "libra"},
+        },
+    }
+    SOULPRINT = [0.1] * 12
+    IMPACT = [0.0] * 12
+
+    def test_skipped_when_no_30day_avg(self):
+        """Without history data, dominance_shift must not fire."""
+        ring = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        events = _detect_events(
+            self.FAKE_TRANSIT, self.SOULPRINT, self.IMPACT,
+            ring_sectors=ring, avg_30d_sectors=None,
+        )
+        types = [e["type"] for e in events]
+        assert "dominance_shift" not in types
+
+    def test_fires_when_dominant_sector_changed(self):
+        """With 30-day avg, dominance_shift fires if dominant sector differs."""
+        ring = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        avg_30d = [0.1, 0.1, 0.1, 0.1, 0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        events = _detect_events(
+            self.FAKE_TRANSIT, self.SOULPRINT, self.IMPACT,
+            ring_sectors=ring, avg_30d_sectors=avg_30d,
+        )
+        dom_events = [e for e in events if e["type"] == "dominance_shift"]
+        assert len(dom_events) == 1
+        assert dom_events[0]["sector"] == 0
+        assert dom_events[0]["priority"] == 1
+
+    def test_not_fired_when_margin_too_small(self):
+        """Margin < 0.08 should not trigger dominance_shift."""
+        ring = [0.15, 0.14, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        avg_30d = [0.1, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        events = _detect_events(
+            self.FAKE_TRANSIT, self.SOULPRINT, self.IMPACT,
+            ring_sectors=ring, avg_30d_sectors=avg_30d,
+        )
+        types = [e["type"] for e in events]
+        assert "dominance_shift" not in types
+
+    def test_not_fired_when_same_dominant(self):
+        """Same dominant sector in current and avg should not trigger."""
+        ring = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        avg_30d = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+        events = _detect_events(
+            self.FAKE_TRANSIT, self.SOULPRINT, self.IMPACT,
+            ring_sectors=ring, avg_30d_sectors=avg_30d,
+        )
+        types = [e["type"] for e in events]
+        assert "dominance_shift" not in types

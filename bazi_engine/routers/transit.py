@@ -1,9 +1,10 @@
 """
 routers/transit.py — Transit API endpoints.
 
-GET  /transit/now       — Current planetary positions.
-POST /transit/state     — Personalized transit state.
-POST /transit/narrative — Text generation from transit state.
+GET  /transit/now        — Current planetary positions.
+GET  /transit/timeline   — Multi-day transit forecast.
+POST /transit/state      — Personalized transit state.
+POST /transit/narrative  — Text generation from transit state.
 """
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from ..transit import compute_transit_now, compute_transit_state, compute_transit_timeline
 from ..narrative import generate_narrative
@@ -82,13 +83,6 @@ class NarrativeResponse(BaseModel):
 class TransitStateRequest(BaseModel):
     soulprint_sectors: List[float] = Field(..., min_length=12, max_length=12)
     quiz_sectors: List[float] = Field(..., min_length=12, max_length=12)
-
-    @field_validator("soulprint_sectors", "quiz_sectors")
-    @classmethod
-    def validate_length(cls, v: List[float]) -> List[float]:
-        if len(v) != 12:
-            raise ValueError("Must have exactly 12 sectors")
-        return v
 
 
 class NarrativeRequest(BaseModel):

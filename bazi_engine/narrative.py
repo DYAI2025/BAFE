@@ -86,7 +86,7 @@ def generate_narrative(transit_state: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # Use highest-priority event for narrative
-    primary = sorted(events, key=lambda e: e.get("priority", 99))[0]
+    primary = min(events, key=lambda e: e.get("priority", 99))
     event_type = primary.get("type", "")
     template = _TEMPLATES.get(event_type, _DEFAULT_TEMPLATE)
 

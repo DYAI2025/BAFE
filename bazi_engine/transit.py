@@ -154,8 +154,8 @@ def compute_transit_state(
         for s in range(12)
     ]
 
-    # Detect events
-    events = _detect_events(transit_now, soulprint_sectors, impact)
+    # Detect events (pass ring_sectors for dominance_shift detection)
+    events = _detect_events(transit_now, soulprint_sectors, impact, ring_sectors)
 
     return {
         "schema": "TRANSIT_STATE_v1",
@@ -177,11 +177,19 @@ def _detect_events(
     transit_now: Dict[str, Any],
     soulprint: List[float],
     impact: List[float],
+    ring_sectors: Optional[List[float]] = None,
+    avg_30d_sectors: Optional[List[float]] = None,
 ) -> List[Dict[str, Any]]:
     """
-    Detect transit events: resonance jumps, moon events.
+    Detect transit events: resonance jumps, dominance shifts, moon events.
 
-    Returns list of event dicts.
+    Three MVP triggers:
+    - resonance_jump: planet on user's peak sector, impact >= 0.18
+    - dominance_shift: current dominant sector != 30-day avg dominant (margin >= 0.08)
+    - moon_event: moon on high-impact sector (>= 0.5)
+
+    dominance_shift requires avg_30d_sectors (History Store, T-03).
+    Guard clause: skipped when avg_30d_sectors is None (Addendum 3.4).
     """
     events: List[Dict[str, Any]] = []
 
@@ -200,6 +208,28 @@ def _detect_events(
                 "description_de": f"{name.capitalize()} aktiviert dein {ZODIAC_SIGNS[sector].capitalize()}-Feld",
                 "personal_context": f"Dein stärkstes Feld wird von {name.capitalize()} berührt",
             })
+
+    # Dominance shift: fires when history store provides 30-day averages
+    if avg_30d_sectors is not None and ring_sectors is not None:
+        current_dominant = max(range(12), key=lambda s: ring_sectors[s])
+        avg_dominant = max(range(12), key=lambda s: avg_30d_sectors[s])
+        if current_dominant != avg_dominant:
+            margin = ring_sectors[current_dominant] - ring_sectors[avg_dominant]
+            if margin >= 0.08:
+                events.append({
+                    "type": "dominance_shift",
+                    "priority": 1,
+                    "sector": current_dominant,
+                    "trigger_planet": "",
+                    "description_de": (
+                        f"Dein Schwerpunkt wechselt zu "
+                        f"{ZODIAC_SIGNS[current_dominant].capitalize()}"
+                    ),
+                    "personal_context": (
+                        f"Sektor {current_dominant} ({ZODIAC_SIGNS[current_dominant].capitalize()}) "
+                        f"übernimmt die Führung"
+                    ),
+                })
 
     # Moon event: if moon is on a high-impact sector
     moon_sector = transit_now["planets"]["moon"]["sector"]
