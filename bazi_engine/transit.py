@@ -106,3 +106,108 @@ def compute_transit_now(
 
     _transit_cache[key] = result
     return result
+
+
+def compute_transit_state(
+    soulprint_sectors: List[float],
+    quiz_sectors: List[float],
+    dt_utc: Optional[datetime] = None,
+    ephe_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Compute personalized transit state.
+
+    Combines current planetary transits with user's soulprint and quiz vectors
+    to produce a personal impact assessment.
+
+    Args:
+        soulprint_sectors: 12-element user soulprint vector
+        quiz_sectors: 12-element quiz result vector
+        dt_utc: UTC datetime (default: now)
+
+    Returns:
+        Transit State JSON conforming to TRANSIT_STATE_v1 schema
+    """
+    transit_now = compute_transit_now(dt_utc=dt_utc, ephe_path=ephe_path)
+    if dt_utc is None:
+        dt_utc = datetime.now(timezone.utc)
+
+    # Transit contribution per sector: weighted planet presence
+    transit_sectors = transit_now["sector_intensity"]
+
+    # Personal impact: transit_strength × (soulprint + quiz)
+    impact = [0.0] * 12
+    for s in range(12):
+        personal = soulprint_sectors[s] + quiz_sectors[s]
+        impact[s] = round(transit_sectors[s] * personal, 2)
+
+    # Transit intensity: mean of non-zero impacts
+    non_zero = [v for v in impact if v > 0]
+    transit_intensity = round(sum(non_zero) / len(non_zero), 2) if non_zero else 0.0
+
+    # Ring sectors: soulprint + quiz contribution + transit contribution
+    ring_sectors = [
+        round(soulprint_sectors[s] + quiz_sectors[s] * 0.5 + impact[s] * 0.3, 2)
+        for s in range(12)
+    ]
+
+    # Detect events
+    events = _detect_events(transit_now, soulprint_sectors, impact)
+
+    return {
+        "schema": "TRANSIT_STATE_v1",
+        "generated_at": dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "ring": {"sectors": ring_sectors},
+        "transit_contribution": {
+            "sectors": [round(v, 2) for v in transit_sectors],
+            "transit_intensity": transit_intensity,
+        },
+        "delta": {
+            "vs_previous": None,
+            "vs_30day_avg": None,  # Null until history store exists (ADR-2, Addendum 3.4)
+        },
+        "events": events,
+    }
+
+
+def _detect_events(
+    transit_now: Dict[str, Any],
+    soulprint: List[float],
+    impact: List[float],
+) -> List[Dict[str, Any]]:
+    """
+    Detect transit events: resonance jumps, moon events.
+
+    Returns list of event dicts.
+    """
+    events: List[Dict[str, Any]] = []
+
+    # Find peak soulprint sector
+    peak_sector = max(range(12), key=lambda s: soulprint[s])
+
+    # Check each planet: if it sits on the user's peak sector
+    for name, pdata in transit_now["planets"].items():
+        sector = pdata["sector"]
+        if sector == peak_sector and impact[sector] >= 0.18:
+            events.append({
+                "type": "resonance_jump",
+                "priority": 1,
+                "sector": sector,
+                "trigger_planet": name,
+                "description_de": f"{name.capitalize()} aktiviert dein {ZODIAC_SIGNS[sector].capitalize()}-Feld",
+                "personal_context": f"Dein stärkstes Feld wird von {name.capitalize()} berührt",
+            })
+
+    # Moon event: if moon is on a high-impact sector
+    moon_sector = transit_now["planets"]["moon"]["sector"]
+    if impact[moon_sector] >= 0.5:
+        events.append({
+            "type": "moon_event",
+            "priority": 2,
+            "sector": moon_sector,
+            "trigger_planet": "moon",
+            "description_de": f"Mond verstärkt dein {ZODIAC_SIGNS[moon_sector].capitalize()}-Feld",
+            "personal_context": "Emotionale Resonanz heute besonders stark",
+        })
+
+    return events
