@@ -88,3 +88,108 @@ class TestTransitNow:
         data = r.json()
         dt = datetime.fromisoformat(data["computed_at"].replace("Z", "+00:00"))
         assert dt.tzinfo is not None
+
+
+class TestTransitState:
+    """POST /transit/state — personalized transit calculation."""
+
+    SAMPLE_SOULPRINT = [0.42, 0.31, 0.55, 0.67, 0.28, 0.19, 0.48, 0.35, 0.22, 0.15, 0.20, 0.61]
+    SAMPLE_QUIZ = [0.30, 0.25, 0.40, 0.35, 0.20, 0.15, 0.50, 0.30, 0.18, 0.10, 0.22, 0.45]
+
+    def _post(self, soulprint=None, quiz=None):
+        with patch("bazi_engine.transit.swe.calc_ut", side_effect=mock_calc_ut):
+            return client.post("/transit/state", json={
+                "soulprint_sectors": soulprint or self.SAMPLE_SOULPRINT,
+                "quiz_sectors": quiz or self.SAMPLE_QUIZ,
+            })
+
+    def test_returns_200(self):
+        assert self._post().status_code == 200
+
+    def test_response_has_schema_field(self):
+        data = self._post().json()
+        assert data["schema"] == "TRANSIT_STATE_v1"
+
+    def test_response_has_ring_sectors(self):
+        data = self._post().json()
+        assert "ring" in data
+        assert len(data["ring"]["sectors"]) == 12
+
+    def test_response_has_transit_contribution(self):
+        data = self._post().json()
+        assert "transit_contribution" in data
+        assert len(data["transit_contribution"]["sectors"]) == 12
+        assert "transit_intensity" in data["transit_contribution"]
+
+    def test_response_has_delta_with_null_30day(self):
+        """Before history store exists, vs_30day_avg should be null."""
+        data = self._post().json()
+        assert "delta" in data
+        assert data["delta"]["vs_30day_avg"] is None
+
+    def test_validates_sector_array_length(self):
+        """Must reject arrays that aren't exactly 12 elements."""
+        r = client.post("/transit/state", json={
+            "soulprint_sectors": [0.1, 0.2],
+            "quiz_sectors": self.SAMPLE_QUIZ,
+        })
+        assert r.status_code == 422
+
+    def test_events_is_list(self):
+        data = self._post().json()
+        assert isinstance(data.get("events"), list)
+
+    def test_generated_at_is_present(self):
+        data = self._post().json()
+        assert "generated_at" in data
+
+
+class TestTransitNarrative:
+    """POST /transit/narrative — text generation from transit state."""
+
+    SAMPLE_STATE = {
+        "schema": "TRANSIT_STATE_v1",
+        "generated_at": "2026-03-09T06:00:00Z",
+        "ring": {"sectors": [0.42, 0.31, 0.55, 0.67, 0.28, 0.19, 0.48, 0.35, 0.22, 0.15, 0.20, 0.61]},
+        "transit_contribution": {
+            "sectors": [0.02, 0.01, 0.05, 0.08, 0.01, 0.0, 0.12, 0.03, 0.01, 0.0, 0.01, 0.15],
+            "transit_intensity": 0.42,
+        },
+        "delta": {"vs_previous": None, "vs_30day_avg": None},
+        "events": [
+            {
+                "type": "resonance_jump",
+                "priority": 1,
+                "sector": 11,
+                "trigger_planet": "saturn",
+                "description_de": "Saturn aktiviert dein Fische-Feld",
+                "personal_context": "Dein stärkstes Feld wird von Saturn berührt",
+            }
+        ],
+    }
+
+    def test_returns_200(self):
+        r = client.post("/transit/narrative", json={"transit_state": self.SAMPLE_STATE})
+        assert r.status_code == 200
+
+    def test_response_has_headline_and_body(self):
+        r = client.post("/transit/narrative", json={"transit_state": self.SAMPLE_STATE})
+        data = r.json()
+        assert "headline" in data
+        assert "body" in data
+        assert "advice" in data
+        assert isinstance(data["pushworthy"], bool)
+
+    def test_narrative_uses_event_data(self):
+        r = client.post("/transit/narrative", json={"transit_state": self.SAMPLE_STATE})
+        data = r.json()
+        assert len(data["headline"]) > 0
+        assert len(data["body"]) > 0
+
+    def test_no_events_still_generates_text(self):
+        state = {**self.SAMPLE_STATE, "events": []}
+        r = client.post("/transit/narrative", json={"transit_state": state})
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["headline"]) > 0
+        assert data["pushworthy"] is False
