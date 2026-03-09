@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 
 from .exc import BaziEngineError, EphemerisUnavailableError
 from . import __version__
-from .routers import info, bazi, western, fusion, validate, chart, webhooks
+from .routers import info, bazi, western, fusion, validate, chart, webhooks, transit
 
 
 @asynccontextmanager
@@ -60,6 +60,7 @@ app.include_router(western.router)
 app.include_router(fusion.router)
 app.include_router(chart.router)
 app.include_router(webhooks.router)
+app.include_router(transit.router)
 
 
 # ── OpenAPI customization ────────────────────────────────────────────────────
