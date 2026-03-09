@@ -610,6 +610,190 @@
           }
         }
       }
+    },
+    "/transit/now": {
+      "get": {
+        "tags": [
+          "Transit"
+        ],
+        "summary": "Transit Now",
+        "description": "Current planetary positions from Swiss Ephemeris.",
+        "operationId": "transit_now_transit_now_get",
+        "parameters": [
+          {
+            "name": "datetime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional UTC datetime in ISO format. Default: now.",
+              "title": "Datetime"
+            },
+            "description": "Optional UTC datetime in ISO format. Default: now."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitNowResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transit/state": {
+      "post": {
+        "tags": [
+          "Transit"
+        ],
+        "summary": "Transit State",
+        "description": "Personalized transit state combining current transits with user profile.",
+        "operationId": "transit_state_transit_state_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitStateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitStateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transit/timeline": {
+      "get": {
+        "tags": [
+          "Transit"
+        ],
+        "summary": "Transit Timeline",
+        "description": "Multi-day transit forecast. Cached 24h (ADR-1).",
+        "operationId": "transit_timeline_transit_timeline_get",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "description": "Number of days to forecast (1-30).",
+              "default": 7,
+              "title": "Days"
+            },
+            "description": "Number of days to forecast (1-30)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimelineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transit/narrative": {
+      "post": {
+        "tags": [
+          "Transit"
+        ],
+        "summary": "Transit Narrative",
+        "description": "Generate narrative text from transit state. Template-based, <50ms (ADR-3).",
+        "operationId": "transit_narrative_transit_narrative_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NarrativeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NarrativeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1145,6 +1329,36 @@
         ],
         "title": "ChineseYearInfo"
       },
+      "Delta": {
+        "properties": {
+          "vs_previous": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs Previous"
+          },
+          "vs_30day_avg": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vs 30Day Avg"
+          }
+        },
+        "type": "object",
+        "title": "Delta"
+      },
       "FusionRequest": {
         "properties": {
           "date": {
@@ -1301,6 +1515,59 @@
         ],
         "title": "HealthResponse"
       },
+      "NarrativeRequest": {
+        "properties": {
+          "transit_state": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Transit State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transit_state"
+        ],
+        "title": "NarrativeRequest"
+      },
+      "NarrativeResponse": {
+        "properties": {
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "advice": {
+            "type": "string",
+            "title": "Advice"
+          },
+          "pushworthy": {
+            "type": "boolean",
+            "title": "Pushworthy"
+          },
+          "push_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "headline",
+          "body",
+          "advice",
+          "pushworthy"
+        ],
+        "title": "NarrativeResponse"
+      },
       "PillarDetail": {
         "properties": {
           "stamm": {
@@ -1366,6 +1633,34 @@
           "element"
         ],
         "title": "PillarSpec"
+      },
+      "PlanetPosition": {
+        "properties": {
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "sector": {
+            "type": "integer",
+            "title": "Sector"
+          },
+          "sign": {
+            "type": "string",
+            "title": "Sign"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "longitude",
+          "sector",
+          "sign",
+          "speed"
+        ],
+        "title": "PlanetPosition"
       },
       "Position": {
         "properties": {
@@ -1454,6 +1749,22 @@
           "sign_name_de"
         ],
         "title": "Position"
+      },
+      "RingSectors": {
+        "properties": {
+          "sectors": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Sectors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sectors"
+        ],
+        "title": "RingSectors"
       },
       "RootResponse": {
         "properties": {
@@ -1625,6 +1936,168 @@
           "quality"
         ],
         "title": "TimeScales"
+      },
+      "TimelineDayResponse": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "planets": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PlanetPosition"
+            },
+            "type": "object",
+            "title": "Planets"
+          },
+          "sector_intensity": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Sector Intensity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "planets",
+          "sector_intensity"
+        ],
+        "title": "TimelineDayResponse"
+      },
+      "TimelineResponse": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineDayResponse"
+            },
+            "type": "array",
+            "title": "Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "days"
+        ],
+        "title": "TimelineResponse"
+      },
+      "TransitContribution": {
+        "properties": {
+          "sectors": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Sectors"
+          },
+          "transit_intensity": {
+            "type": "number",
+            "title": "Transit Intensity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sectors",
+          "transit_intensity"
+        ],
+        "title": "TransitContribution"
+      },
+      "TransitNowResponse": {
+        "properties": {
+          "computed_at": {
+            "type": "string",
+            "title": "Computed At"
+          },
+          "planets": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PlanetPosition"
+            },
+            "type": "object",
+            "title": "Planets"
+          },
+          "sector_intensity": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Sector Intensity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "computed_at",
+          "planets",
+          "sector_intensity"
+        ],
+        "title": "TransitNowResponse"
+      },
+      "TransitStateRequest": {
+        "properties": {
+          "soulprint_sectors": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "minItems": 12,
+            "title": "Soulprint Sectors"
+          },
+          "quiz_sectors": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "minItems": 12,
+            "title": "Quiz Sectors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "soulprint_sectors",
+          "quiz_sectors"
+        ],
+        "title": "TransitStateRequest"
+      },
+      "TransitStateResponse": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "title": "Schema"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "ring": {
+            "$ref": "#/components/schemas/RingSectors"
+          },
+          "transit_contribution": {
+            "$ref": "#/components/schemas/TransitContribution"
+          },
+          "delta": {
+            "$ref": "#/components/schemas/Delta"
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "schema",
+          "generated_at",
+          "ring",
+          "transit_contribution",
+          "delta",
+          "events"
+        ],
+        "title": "TransitStateResponse"
       },
       "ValidationError": {
         "properties": {

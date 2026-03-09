@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field, field_validator
 
-from ..transit import compute_transit_now, compute_transit_state
+from ..transit import compute_transit_now, compute_transit_state, compute_transit_timeline
 from ..narrative import generate_narrative
 
 router = APIRouter(prefix="/transit", tags=["Transit"])
@@ -57,6 +57,16 @@ class TransitStateResponse(BaseModel):
     events: List[Dict[str, Any]]
 
     model_config = {"populate_by_name": True}
+
+
+class TimelineDayResponse(BaseModel):
+    date: str
+    planets: Dict[str, PlanetPosition]
+    sector_intensity: List[float]
+
+
+class TimelineResponse(BaseModel):
+    days: List[TimelineDayResponse]
 
 
 class NarrativeResponse(BaseModel):
@@ -111,6 +121,14 @@ def transit_state(body: TransitStateRequest) -> Dict[str, Any]:
         soulprint_sectors=body.soulprint_sectors,
         quiz_sectors=body.quiz_sectors,
     )
+
+
+@router.get("/timeline", response_model=TimelineResponse)
+def transit_timeline(
+    days: int = Query(7, ge=1, le=30, description="Number of days to forecast (1-30)."),
+) -> Dict[str, Any]:
+    """Multi-day transit forecast. Cached 24h (ADR-1)."""
+    return compute_transit_timeline(days=days)
 
 
 @router.post("/narrative", response_model=NarrativeResponse)

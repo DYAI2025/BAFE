@@ -193,3 +193,39 @@ class TestTransitNarrative:
         data = r.json()
         assert len(data["headline"]) > 0
         assert data["pushworthy"] is False
+
+
+class TestTransitTimeline:
+    """GET /transit/timeline — multi-day transit forecast."""
+
+    def test_returns_200(self):
+        with patch("bazi_engine.transit.swe.calc_ut", side_effect=mock_calc_ut):
+            r = client.get("/transit/timeline")
+        assert r.status_code == 200
+
+    def test_default_7_days(self):
+        with patch("bazi_engine.transit.swe.calc_ut", side_effect=mock_calc_ut):
+            r = client.get("/transit/timeline")
+        data = r.json()
+        assert len(data["days"]) == 7
+
+    def test_returns_requested_days(self):
+        with patch("bazi_engine.transit.swe.calc_ut", side_effect=mock_calc_ut):
+            r = client.get("/transit/timeline?days=3")
+        data = r.json()
+        assert len(data["days"]) == 3
+
+    def test_each_day_has_planets_and_date(self):
+        with patch("bazi_engine.transit.swe.calc_ut", side_effect=mock_calc_ut):
+            r = client.get("/transit/timeline?days=2")
+        data = r.json()
+        for day in data["days"]:
+            assert "date" in day
+            assert "planets" in day
+            assert "sector_intensity" in day
+
+    def test_rejects_invalid_days(self):
+        r = client.get("/transit/timeline?days=0")
+        assert r.status_code == 422
+        r = client.get("/transit/timeline?days=31")
+        assert r.status_code == 422

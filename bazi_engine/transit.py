@@ -6,7 +6,7 @@ Cached per hour (ADR-1: cachetools.TTLCache).
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import swisseph as swe
@@ -44,6 +44,9 @@ PLANET_WEIGHTS = {
 
 # Cache: 1 hour TTL, max 64 entries (keyed by truncated hour)
 _transit_cache: TTLCache = TTLCache(maxsize=64, ttl=3600)
+
+# Timeline cache: 24h TTL (ADR-1), keyed by date+days
+_timeline_cache: TTLCache = TTLCache(maxsize=16, ttl=86400)
 
 
 def _cache_key(dt: datetime) -> str:
@@ -211,3 +214,43 @@ def _detect_events(
         })
 
     return events
+
+
+def compute_transit_timeline(
+    days: int = 7,
+    start_utc: Optional[datetime] = None,
+    ephe_path: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Compute multi-day transit forecast.
+
+    Args:
+        days: Number of days to forecast (1-30)
+        start_utc: Start date (default: today at noon UTC)
+        ephe_path: Swiss Ephemeris file path override
+
+    Returns:
+        Dict with list of daily transit snapshots
+    """
+    if start_utc is None:
+        start_utc = datetime.now(timezone.utc).replace(
+            hour=12, minute=0, second=0, microsecond=0
+        )
+
+    cache_key = f"timeline:{start_utc.strftime('%Y-%m-%d')}:{days}"
+    if cache_key in _timeline_cache:
+        return _timeline_cache[cache_key]
+
+    result_days: List[Dict[str, Any]] = []
+    for i in range(days):
+        day_dt = start_utc + timedelta(days=i)
+        snapshot = compute_transit_now(dt_utc=day_dt, ephe_path=ephe_path)
+        result_days.append({
+            "date": day_dt.strftime("%Y-%m-%d"),
+            "planets": snapshot["planets"],
+            "sector_intensity": snapshot["sector_intensity"],
+        })
+
+    result = {"days": result_days}
+    _timeline_cache[cache_key] = result
+    return result
