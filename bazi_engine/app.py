@@ -19,13 +19,13 @@ from .routers import info, bazi, western, fusion, validate, chart, webhooks
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import logging
-    logging.getLogger("uvicorn").info(f"BAFE starting: {__version__}")
+    logging.getLogger("uvicorn").info(f"FuFirE starting: {__version__}")
     yield
 
 
 app = FastAPI(
-    title="BaZi Engine v2 API",
-    description="API for BaZi (Chinese Astrology) and Basic Western Astrology calculations.",
+    title="FuFirE — Fusion Firmament Engine",
+    description="FuFirE: Deterministic astronomical calculation engine for BaZi (Chinese Astrology) and Western Astrology with Wu-Xing fusion.",
     version=__version__,
     lifespan=lifespan,
 )
