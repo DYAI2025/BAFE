@@ -1,0 +1,69 @@
+{
+  "chinese": {
+    "day_master": "Wu",
+    "hour_master": "Ren",
+    "month_master": "Bing",
+    "year": {
+      "animal": "Rabbit",
+      "branch": "Mao",
+      "stem": "Ji"
+    }
+  },
+  "dates": {
+    "birth_local": "2000-01-01T00:01:00+11:00",
+    "birth_utc": "1999-12-31T13:01:00+00:00",
+    "lichun_local": "1999-02-04T17:57:02.976606+11:00"
+  },
+  "input": {
+    "ambiguousTime": "earlier",
+    "boundary": "midnight",
+    "date": "2000-01-01T00:01:00",
+    "lat": -33.8688,
+    "lon": 151.2093,
+    "nonexistentTime": "error",
+    "standard": "CIVIL",
+    "tz": "Australia/Sydney"
+  },
+  "pillars": {
+    "day": {
+      "element": "Erde",
+      "stamm": "Wu",
+      "tier": "Pferd",
+      "zweig": "Wu"
+    },
+    "hour": {
+      "element": "Wasser",
+      "stamm": "Ren",
+      "tier": "Ratte",
+      "zweig": "Zi"
+    },
+    "month": {
+      "element": "Feuer",
+      "stamm": "Bing",
+      "tier": "Ratte",
+      "zweig": "Zi"
+    },
+    "year": {
+      "element": "Erde",
+      "stamm": "Ji",
+      "tier": "Hase",
+      "zweig": "Mao"
+    }
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "solar_terms_count": 24,
+  "transition": {
+    "is_before_lichun": true,
+    "lichun_next": "2000-02-04T23:40:22.884223+11:00",
+    "lichun_year_start": "1999-02-04T17:57:02.976606+11:00",
+    "solar_year": 1999
+  }
+}

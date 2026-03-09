@@ -1,0 +1,27 @@
+{
+  "dominant_element": "Holz",
+  "equation_of_time": -4.873,
+  "input": {
+    "date": "2010-08-15T09:30:00",
+    "lat": 19.076,
+    "lon": 72.8777,
+    "tz": "Asia/Kolkata"
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "true_solar_time": 9.4188,
+  "wu_xing_vector": {
+    "Erde": 0.2726202734,
+    "Feuer": 0.4498234511,
+    "Holz": 0.7088127108,
+    "Metall": 0.1363101367,
+    "Wasser": 0.4498234511
+  }
+}

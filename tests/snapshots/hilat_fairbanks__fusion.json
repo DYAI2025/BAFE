@@ -1,0 +1,81 @@
+{
+  "cosmic_state": 0.7369,
+  "elemental_comparison": {
+    "Erde": {
+      "bazi": 0.756,
+      "difference": -0.428,
+      "western": 0.328
+    },
+    "Feuer": {
+      "bazi": 0.094,
+      "difference": 0.376,
+      "western": 0.47
+    },
+    "Holz": {
+      "bazi": 0.34,
+      "difference": 0.316,
+      "western": 0.656
+    },
+    "Metall": {
+      "bazi": 0.435,
+      "difference": -0.292,
+      "western": 0.143
+    },
+    "Wasser": {
+      "bazi": 0.34,
+      "difference": 0.13,
+      "western": 0.47
+    }
+  },
+  "fusion_interpretation": "Harmonie-Index: 73.69%\nGute Harmonie - Die Energien unterstützen sich gegenseitig\n\nWestliche Dominanz: Holz\nÖstliche Dominanz: Erde\n\nIhre westliche und östliche Chart stehen in starker Resonanz.\nDie Energien ergänzen sich harmonisch.",
+  "harmony_index": {
+    "bazi_vector": {
+      "Erde": 0.7556591159,
+      "Feuer": 0.0944573895,
+      "Holz": 0.3400466022,
+      "Metall": 0.4345039917,
+      "Wasser": 0.3400466022
+    },
+    "harmony_index": 0.7369,
+    "interpretation": "Gute Harmonie - Die Energien unterstützen sich gegenseitig",
+    "method": "dot_product",
+    "western_vector": {
+      "Erde": 0.3278029957,
+      "Feuer": 0.4703260373,
+      "Holz": 0.6556059914,
+      "Metall": 0.1425230416,
+      "Wasser": 0.4703260373
+    }
+  },
+  "input": {
+    "date": "2024-09-22T14:00:00",
+    "lat": 64.8378,
+    "lon": -147.7164,
+    "tz": "America/Anchorage"
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "wu_xing_vectors": {
+    "bazi_pillars": {
+      "Erde": 0.7556591159,
+      "Feuer": 0.0944573895,
+      "Holz": 0.3400466022,
+      "Metall": 0.4345039917,
+      "Wasser": 0.3400466022
+    },
+    "western_planets": {
+      "Erde": 0.3278029957,
+      "Feuer": 0.4703260373,
+      "Holz": 0.6556059914,
+      "Metall": 0.1425230416,
+      "Wasser": 0.4703260373
+    }
+  }
+}
