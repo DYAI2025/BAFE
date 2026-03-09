@@ -56,3 +56,4 @@ Thumbs.db
 *.bsp
 .claude/
 generated/
+.worktrees/
