@@ -35,6 +35,8 @@ class RootResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+    engine: str = "FuFirE"
+    version: str = ""
 
 
 class BuildResponse(BaseModel):
@@ -70,12 +72,12 @@ def _build_metadata() -> Dict[str, str]:
 
 @router.get("/", response_model=RootResponse)
 def read_root() -> Dict[str, Any]:
-    return {"status": "ok", "service": "bazi_engine_v2", **_build_metadata()}
+    return {"status": "ok", "service": "fufire", **_build_metadata()}
 
 
 @router.get("/health", response_model=HealthResponse)
-def health_check() -> Dict[str, str]:
-    return {"status": "healthy"}
+def health_check() -> Dict[str, Any]:
+    return {"status": "healthy", "engine": "FuFirE", "version": _ENGINE_VERSION}
 
 
 @router.get("/build", response_model=BuildResponse)

@@ -13,19 +13,19 @@ from fastapi.responses import JSONResponse
 
 from .exc import BaziEngineError, EphemerisUnavailableError
 from . import __version__
-from .routers import info, bazi, western, fusion, validate, chart, webhooks
+from .routers import info, bazi, western, fusion, validate, chart, webhooks, transit
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import logging
-    logging.getLogger("uvicorn").info(f"BAFE starting: {__version__}")
+    logging.getLogger("uvicorn").info(f"FuFirE starting: {__version__}")
     yield
 
 
 app = FastAPI(
-    title="BaZi Engine v2 API",
-    description="API for BaZi (Chinese Astrology) and Basic Western Astrology calculations.",
+    title="FuFirE — Fusion Firmament Engine",
+    description="FuFirE: Deterministic astronomical calculation engine for BaZi (Chinese Astrology) and Western Astrology with Wu-Xing fusion.",
     version=__version__,
     lifespan=lifespan,
 )
@@ -60,6 +60,7 @@ app.include_router(western.router)
 app.include_router(fusion.router)
 app.include_router(chart.router)
 app.include_router(webhooks.router)
+app.include_router(transit.router)
 
 
 # ── OpenAPI customization ────────────────────────────────────────────────────
