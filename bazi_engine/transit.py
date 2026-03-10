@@ -85,7 +85,7 @@ def compute_transit_now(
     for name, pid in TRANSIT_PLANETS.items():
         (lon_deg, _lat, _dist, speed_lon, _, _), ret = swe.calc_ut(jd_ut, pid, flags)
         assert_no_moseph_fallback(flags, ret)
-        sector = int(lon_deg // 30)
+        sector = int(lon_deg // 30) % 12
         planets[name] = {
             "longitude": round(lon_deg, 1),
             "sector": sector,
