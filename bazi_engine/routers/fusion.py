@@ -50,6 +50,7 @@ class FusionResponse(BaseModel):
     input: Dict[str, Any]
     wu_xing_vectors: Dict[str, Dict[str, float]]
     harmony_index: Dict[str, Any]
+    calibration: Optional[Dict[str, Any]] = None
     elemental_comparison: Dict[str, Dict[str, float]]
     cosmic_state: float
     fusion_interpretation: str
@@ -90,17 +91,20 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
                 "hour":  format_pillar(bazi_result.pillars.hour),
             }
 
+        ascendant = western_chart.get("angles", {}).get("Ascendant")
         fusion = compute_fusion_analysis(
             birth_utc_dt=dt_utc,
             latitude=req.lat,
             longitude=req.lon,
             bazi_pillars=pillars,
             western_bodies=western_chart["bodies"],
+            ascendant=ascendant,
         )
         return {
             "input": {"date": req.date, "tz": req.tz, "lon": req.lon, "lat": req.lat},
             "wu_xing_vectors":      fusion["wu_xing_vectors"],
             "harmony_index":        fusion["harmony_index"],
+            "calibration":          fusion["calibration"],
             "elemental_comparison": fusion["elemental_comparison"],
             "cosmic_state":         fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"],
@@ -147,7 +151,10 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
         )
         dt_utc = dt.astimezone(timezone.utc)
         western_chart = compute_western_chart(dt_utc, req.lat, req.lon)
-        wx_vector, wx_ledger = calculate_wuxing_vector_from_planets_with_ledger(western_chart["bodies"])
+        asc = western_chart.get("angles", {}).get("Ascendant")
+        wx_vector, wx_ledger = calculate_wuxing_vector_from_planets_with_ledger(
+            western_chart["bodies"], ascendant=asc,
+        )
         wx_norm = wx_vector.normalize()
         day_of_year = dt.timetuple().tm_yday
         civil_time_hours = dt.hour + dt.minute / 60

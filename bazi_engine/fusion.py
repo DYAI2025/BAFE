@@ -33,6 +33,7 @@ from .wuxing import (                                        # noqa: F401
     calculate_harmony_index,
     interpret_harmony,
 )
+from .wuxing.calibration import calibrate_harmony
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -77,6 +78,7 @@ def compute_fusion_analysis(
     longitude: float,
     bazi_pillars: Dict[str, Dict[str, str]],
     western_bodies: Dict[str, Dict[str, Any]],
+    ascendant: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Complete Fusion Astrology Analysis.
 
@@ -89,25 +91,49 @@ def compute_fusion_analysis(
         longitude:      Birth longitude in degrees.
         bazi_pillars:   Year/month/day/hour pillars (stem + branch).
         western_bodies: Planetary data from compute_western_chart().
+        ascendant:      Ascendant longitude for day/night chart detection.
+                        If None, defaults to day chart (assumed_day quality).
 
     Returns:
-        Dict with wu_xing_vectors, harmony_index, elemental_comparison,
-        cosmic_state, and fusion_interpretation.
+        Dict with wu_xing_vectors, harmony_index, calibration,
+        elemental_comparison, cosmic_state, and fusion_interpretation.
     """
-    western_wuxing, western_ledger = calculate_wuxing_vector_from_planets_with_ledger(western_bodies)
+    western_wuxing, western_ledger = calculate_wuxing_vector_from_planets_with_ledger(
+        western_bodies, ascendant=ascendant,
+    )
     bazi_wuxing, bazi_ledger = calculate_wuxing_from_bazi_with_ledger(bazi_pillars)
-    harmony        = calculate_harmony_index(western_wuxing, bazi_wuxing)
+    harmony = calculate_harmony_index(western_wuxing, bazi_wuxing)
+
+    # Calibrate H relative to empirical baseline for this input density
+    cal = calibrate_harmony(
+        h_raw=harmony["harmony_index"],
+        western_bodies=western_bodies,
+        bazi_pillars=bazi_pillars,
+        western_vector=western_wuxing,
+        bazi_vector=bazi_wuxing,
+    )
+    calibration_dict = {
+        "h_raw": cal.h_raw,
+        "h_calibrated": cal.h_calibrated,
+        "h_baseline": cal.h_baseline,
+        "h_sigma": cal.h_sigma,
+        "sigma_above": cal.sigma_above,
+        "quality": cal.quality,
+        "interpretation_band": cal.interpretation_band,
+        "n_west": cal.n_west,
+        "n_bazi_contributions": cal.n_bazi_contributions,
+    }
 
     western_norm = western_wuxing.normalize()
-    bazi_norm    = bazi_wuxing.normalize()
+    bazi_norm = bazi_wuxing.normalize()
 
     elemental_comparison: Dict[str, Dict[str, float]] = {}
     for elem in WUXING_ORDER:
         w_val = getattr(western_norm, elem.lower())
-        b_val = getattr(bazi_norm,    elem.lower())
+        b_val = getattr(bazi_norm, elem.lower())
         elemental_comparison[elem] = {
-            "western":    round(w_val, 3),
-            "bazi":       round(b_val, 3),
+            "western": round(w_val, 3),
+            "bazi": round(b_val, 3),
             "difference": round(w_val - b_val, 3),
         }
 
@@ -118,11 +144,12 @@ def compute_fusion_analysis(
     return {
         "wu_xing_vectors": {
             "western_planets": western_norm.to_dict(),
-            "bazi_pillars":    bazi_norm.to_dict(),
+            "bazi_pillars": bazi_norm.to_dict(),
         },
-        "harmony_index":        harmony,
+        "harmony_index": harmony,
+        "calibration": calibration_dict,
         "elemental_comparison": elemental_comparison,
-        "cosmic_state":         round(cosmic_state, 4),
+        "cosmic_state": round(cosmic_state, 4),
         "fusion_interpretation": generate_fusion_interpretation(
             harmony["harmony_index"], elemental_comparison, western_wuxing, bazi_wuxing
         ),
