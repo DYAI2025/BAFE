@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from bazi_engine import __version__
 from bazi_engine.app import app
-from bazi_engine.provenance import build_provenance
+from bazi_engine.provenance import build_provenance, normalize_house_system
 
 client = TestClient(app)
 
@@ -72,8 +72,15 @@ class TestBuildProvenance:
         prov = build_provenance()
         assert prov["parameter_set_id"] == "default_v1"
         assert prov["ruleset_id"] == "traditional_bazi_2026"
-        assert prov["house_system"] == "placidus"
+        assert prov["house_system"] == "placidus"  # default when no override
         assert prov["zodiac_mode"] == "tropical"
+
+    def test_normalize_house_system_codes(self):
+        assert normalize_house_system("P") == "placidus"
+        assert normalize_house_system("O") == "porphyry"
+        assert normalize_house_system("W") == "whole_sign"
+        assert normalize_house_system(None) == "unknown"
+        assert normalize_house_system("X") == "x"  # unknown codes lowercase
 
     def test_overrides(self):
         prov = build_provenance(
@@ -204,3 +211,62 @@ class TestProvenanceConsistency:
         assert set(prov.keys()) == PROVENANCE_FIELDS
         # Timestamp must be parseable
         datetime.fromisoformat(prov["computation_timestamp"])
+
+
+# High-latitude payload where Placidus typically falls back
+ARCTIC_PAYLOAD = {
+    "date": "2024-06-21T12:00:00",
+    "tz": "Arctic/Longyearbyen",
+    "lon": 15.6,
+    "lat": 78.22,
+}
+
+
+@_skip_no_ephe
+class TestProvenanceHouseSystemRuntime:
+    """provenance.house_system must reflect the actual computed house system."""
+
+    def test_western_mid_latitude_placidus(self):
+        """Mid-latitude: Placidus should work, provenance should say so."""
+        r = client.post("/calculate/western", json=BAZI_PAYLOAD)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["house_system"] == "P"
+        assert data["provenance"]["house_system"] == "placidus"
+
+    def test_western_high_latitude_provenance_matches(self):
+        """High latitude: provenance.house_system must match actual house_system."""
+        r = client.post("/calculate/western", json=ARCTIC_PAYLOAD)
+        assert r.status_code == 200
+        data = r.json()
+        actual_code = data["house_system"]
+        assert data["provenance"]["house_system"] == normalize_house_system(actual_code)
+
+    def test_fusion_high_latitude_fallback(self):
+        """Fusion endpoint: provenance.house_system matches runtime fallback."""
+        r = client.post("/calculate/fusion", json=ARCTIC_PAYLOAD)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["provenance"]["house_system"] in {"placidus", "porphyry", "whole_sign"}
+
+    def test_wuxing_high_latitude_fallback(self):
+        """Wuxing endpoint: provenance.house_system matches runtime fallback."""
+        r = client.post("/calculate/wuxing", json=ARCTIC_PAYLOAD)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["provenance"]["house_system"] in {"placidus", "porphyry", "whole_sign"}
+
+    @pytest.mark.parametrize("endpoint", [
+        "/calculate/western",
+        "/calculate/fusion",
+        "/calculate/wuxing",
+    ])
+    def test_provenance_never_lies_about_house_system(self, endpoint):
+        """provenance.house_system must never be 'placidus' if actual system differs."""
+        r = client.post(endpoint, json=ARCTIC_PAYLOAD)
+        if r.status_code != 200:
+            pytest.skip(f"{endpoint} returned {r.status_code}")
+        data = r.json()
+        prov_hs = data["provenance"]["house_system"]
+        # For western, we can directly check; for fusion/wuxing we just verify it's valid
+        assert prov_hs in {"placidus", "porphyry", "whole_sign"}

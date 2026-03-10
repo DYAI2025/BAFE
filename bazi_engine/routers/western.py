@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ..exc import BaziEngineError
-from ..provenance import build_provenance
+from ..provenance import build_provenance, normalize_house_system
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..western import compute_western_chart
 from .shared import ProvenanceResponse
@@ -39,6 +39,7 @@ class WesternBodyResponse(BaseModel):
 
 class WesternResponse(BaseModel):
     jd_ut: float
+    house_system: str
     bodies: Dict[str, WesternBodyResponse]
     houses: Optional[Dict[str, float]] = None
     angles: Optional[Dict[str, float]] = None
@@ -54,7 +55,9 @@ def calculate_western_endpoint(req: WesternRequest) -> Dict[str, Any]:
         )
         dt_utc = dt_local.astimezone(timezone.utc)
         result = compute_western_chart(dt_utc, req.lat, req.lon)
-        result["provenance"] = build_provenance()
+        result["provenance"] = build_provenance(
+            house_system=normalize_house_system(result.get("house_system")),
+        )
         return result
     except BaziEngineError:
         raise

@@ -132,6 +132,7 @@
       "zodiac_sign": 4
     }
   },
+  "house_system": "O",
   "houses": {
     "1": 163.8923271887,
     "10": 60.5426894103,
@@ -150,7 +151,7 @@
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
     "ephemeris_id": "moshier_analytic",
-    "house_system": "placidus",
+    "house_system": "porphyry",
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
     "tzdb_version_id": "unknown",
