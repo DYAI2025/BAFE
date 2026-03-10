@@ -4,6 +4,96 @@
     "MC": 289.7959878486,
     "Vertex": 195.3574277508
   },
+  "aspects": [
+    {
+      "angle": 90.0,
+      "exact_angle": 90.0,
+      "orb": 0.0,
+      "planet1": "Sun",
+      "planet2": "Uranus",
+      "type": "square"
+    },
+    {
+      "angle": 91.03,
+      "exact_angle": 90.0,
+      "orb": 1.03,
+      "planet1": "Venus",
+      "planet2": "Mars",
+      "type": "square"
+    },
+    {
+      "angle": 178.23,
+      "exact_angle": 180.0,
+      "orb": 1.77,
+      "planet1": "Moon",
+      "planet2": "Pluto",
+      "type": "opposition"
+    },
+    {
+      "angle": 63.19,
+      "exact_angle": 60.0,
+      "orb": 3.19,
+      "planet1": "Mercury",
+      "planet2": "Neptune",
+      "type": "sextile"
+    },
+    {
+      "angle": 123.3,
+      "exact_angle": 120.0,
+      "orb": 3.3,
+      "planet1": "Moon",
+      "planet2": "Neptune",
+      "type": "trine"
+    },
+    {
+      "angle": 115.98,
+      "exact_angle": 120.0,
+      "orb": 4.02,
+      "planet1": "Sun",
+      "planet2": "Mars",
+      "type": "trine"
+    },
+    {
+      "angle": 64.34,
+      "exact_angle": 60.0,
+      "orb": 4.34,
+      "planet1": "Mars",
+      "planet2": "Jupiter",
+      "type": "sextile"
+    },
+    {
+      "angle": 65.05,
+      "exact_angle": 60.0,
+      "orb": 5.05,
+      "planet1": "Venus",
+      "planet2": "Uranus",
+      "type": "sextile"
+    },
+    {
+      "angle": 54.93,
+      "exact_angle": 60.0,
+      "orb": 5.07,
+      "planet1": "Neptune",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 114.5,
+      "exact_angle": 120.0,
+      "orb": 5.5,
+      "planet1": "Mercury",
+      "planet2": "Uranus",
+      "type": "trine"
+    },
+    {
+      "angle": 173.51,
+      "exact_angle": 180.0,
+      "orb": 6.49,
+      "planet1": "Moon",
+      "planet2": "Mercury",
+      "type": "opposition"
+    }
+  ],
   "bodies": {
     "Chiron": {
       "degree_in_sign": null,
@@ -131,6 +221,12 @@
       "speed": 1.2410295986,
       "zodiac_sign": 11
     }
+  },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
   },
   "house_system": "P",
   "houses": {

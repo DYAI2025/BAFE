@@ -4,6 +4,104 @@
     "MC": 128.9749729852,
     "Vertex": 59.916087259
   },
+  "aspects": [
+    {
+      "angle": 89.44,
+      "exact_angle": 90.0,
+      "orb": 0.56,
+      "planet1": "Mercury",
+      "planet2": "Jupiter",
+      "type": "square"
+    },
+    {
+      "angle": 60.83,
+      "exact_angle": 60.0,
+      "orb": 0.83,
+      "planet1": "Jupiter",
+      "planet2": "Saturn",
+      "type": "sextile"
+    },
+    {
+      "angle": 2.04,
+      "exact_angle": 0.0,
+      "orb": 2.04,
+      "planet1": "Moon",
+      "planet2": "Saturn",
+      "type": "conjunction"
+    },
+    {
+      "angle": 57.85,
+      "exact_angle": 60.0,
+      "orb": 2.15,
+      "planet1": "Mars",
+      "planet2": "Neptune",
+      "type": "sextile"
+    },
+    {
+      "angle": 2.45,
+      "exact_angle": 0.0,
+      "orb": 2.45,
+      "planet1": "Mars",
+      "planet2": "Pluto",
+      "type": "conjunction"
+    },
+    {
+      "angle": 87.51,
+      "exact_angle": 90.0,
+      "orb": 2.49,
+      "planet1": "Sun",
+      "planet2": "Uranus",
+      "type": "square"
+    },
+    {
+      "angle": 62.87,
+      "exact_angle": 60.0,
+      "orb": 2.87,
+      "planet1": "Moon",
+      "planet2": "Jupiter",
+      "type": "sextile"
+    },
+    {
+      "angle": 63.16,
+      "exact_angle": 60.0,
+      "orb": 3.16,
+      "planet1": "Venus",
+      "planet2": "Neptune",
+      "type": "sextile"
+    },
+    {
+      "angle": 116.27,
+      "exact_angle": 120.0,
+      "orb": 3.73,
+      "planet1": "Venus",
+      "planet2": "Uranus",
+      "type": "trine"
+    },
+    {
+      "angle": 55.41,
+      "exact_angle": 60.0,
+      "orb": 4.59,
+      "planet1": "Neptune",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 5.31,
+      "exact_angle": 0.0,
+      "orb": 5.31,
+      "planet1": "Venus",
+      "planet2": "Mars",
+      "type": "conjunction"
+    },
+    {
+      "angle": 7.76,
+      "exact_angle": 0.0,
+      "orb": 7.76,
+      "planet1": "Venus",
+      "planet2": "Pluto",
+      "type": "conjunction"
+    }
+  ],
   "bodies": {
     "Chiron": {
       "degree_in_sign": null,
@@ -131,6 +229,12 @@
       "speed": 1.2362526923,
       "zodiac_sign": 9
     }
+  },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
   },
   "house_system": "P",
   "houses": {

@@ -4,6 +4,80 @@
     "MC": 51.1208058303,
     "Vertex": 281.5978586569
   },
+  "aspects": [
+    {
+      "angle": 60.49,
+      "exact_angle": 60.0,
+      "orb": 0.49,
+      "planet1": "Venus",
+      "planet2": "Saturn",
+      "type": "sextile"
+    },
+    {
+      "angle": 61.52,
+      "exact_angle": 60.0,
+      "orb": 1.52,
+      "planet1": "Mercury",
+      "planet2": "Uranus",
+      "type": "sextile"
+    },
+    {
+      "angle": 1.91,
+      "exact_angle": 0.0,
+      "orb": 1.91,
+      "planet1": "Saturn",
+      "planet2": "Pluto",
+      "type": "conjunction"
+    },
+    {
+      "angle": 62.4,
+      "exact_angle": 60.0,
+      "orb": 2.4,
+      "planet1": "Venus",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 62.79,
+      "exact_angle": 60.0,
+      "orb": 2.79,
+      "planet1": "Jupiter",
+      "planet2": "Neptune",
+      "type": "sextile"
+    },
+    {
+      "angle": 116.37,
+      "exact_angle": 120.0,
+      "orb": 3.63,
+      "planet1": "Sun",
+      "planet2": "Moon",
+      "type": "trine"
+    },
+    {
+      "angle": 94.22,
+      "exact_angle": 90.0,
+      "orb": 4.22,
+      "planet1": "Venus",
+      "planet2": "Mars",
+      "type": "square"
+    },
+    {
+      "angle": 85.49,
+      "exact_angle": 90.0,
+      "orb": 4.51,
+      "planet1": "Mars",
+      "planet2": "Neptune",
+      "type": "square"
+    },
+    {
+      "angle": 84.18,
+      "exact_angle": 90.0,
+      "orb": 5.82,
+      "planet1": "Moon",
+      "planet2": "Neptune",
+      "type": "square"
+    }
+  ],
   "bodies": {
     "Chiron": {
       "degree_in_sign": null,
@@ -131,6 +205,12 @@
       "speed": 1.1828246328,
       "zodiac_sign": 11
     }
+  },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
   },
   "house_system": "P",
   "houses": {

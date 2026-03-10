@@ -36,6 +36,7 @@ LAYERS: Dict[str, int] = {
     "time_utils":  2,
     "solar_time":  2,
     "jieqi":       3,
+    "aspects":     4,
     "bazi":        4,
     "western":     4,
     "fusion":      4,

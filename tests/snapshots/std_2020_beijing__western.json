@@ -4,6 +4,88 @@
     "MC": 219.231936865,
     "Vertex": 142.0364782908
   },
+  "aspects": [
+    {
+      "angle": 89.64,
+      "exact_angle": 90.0,
+      "orb": 0.36,
+      "planet1": "Mars",
+      "planet2": "Saturn",
+      "type": "square"
+    },
+    {
+      "angle": 61.09,
+      "exact_angle": 60.0,
+      "orb": 1.09,
+      "planet1": "Jupiter",
+      "planet2": "Neptune",
+      "type": "sextile"
+    },
+    {
+      "angle": 92.49,
+      "exact_angle": 90.0,
+      "orb": 2.49,
+      "planet1": "Mars",
+      "planet2": "Pluto",
+      "type": "square"
+    },
+    {
+      "angle": 2.85,
+      "exact_angle": 0.0,
+      "orb": 2.85,
+      "planet1": "Saturn",
+      "planet2": "Pluto",
+      "type": "conjunction"
+    },
+    {
+      "angle": 123.14,
+      "exact_angle": 120.0,
+      "orb": 3.14,
+      "planet1": "Venus",
+      "planet2": "Mars",
+      "type": "trine"
+    },
+    {
+      "angle": 56.53,
+      "exact_angle": 60.0,
+      "orb": 3.47,
+      "planet1": "Neptune",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 4.55,
+      "exact_angle": 0.0,
+      "orb": 4.55,
+      "planet1": "Jupiter",
+      "planet2": "Pluto",
+      "type": "conjunction"
+    },
+    {
+      "angle": 174.34,
+      "exact_angle": 180.0,
+      "orb": 5.66,
+      "planet1": "Mercury",
+      "planet2": "Uranus",
+      "type": "opposition"
+    },
+    {
+      "angle": 173.09,
+      "exact_angle": 180.0,
+      "orb": 6.91,
+      "planet1": "Sun",
+      "planet2": "Moon",
+      "type": "opposition"
+    },
+    {
+      "angle": 7.4,
+      "exact_angle": 0.0,
+      "orb": 7.4,
+      "planet1": "Jupiter",
+      "planet2": "Saturn",
+      "type": "conjunction"
+    }
+  ],
   "bodies": {
     "Chiron": {
       "degree_in_sign": null,
@@ -131,6 +213,12 @@
       "speed": 1.1616161231,
       "zodiac_sign": 4
     }
+  },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
   },
   "house_system": "P",
   "houses": {

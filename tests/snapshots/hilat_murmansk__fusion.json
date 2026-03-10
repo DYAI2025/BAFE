@@ -47,6 +47,12 @@
       "Wasser": 0.4703260373
     }
   },
+  "house_quality": {
+    "flag": "fallback",
+    "reason": "Placidus undefined at latitude 69.0°",
+    "requested": "placidus",
+    "system": "porphyry"
+  },
   "input": {
     "date": "2024-08-01T08:00:00",
     "lat": 68.9585,

@@ -4,6 +4,96 @@
     "MC": 40.3662021782,
     "Vertex": 287.4412804721
   },
+  "aspects": [
+    {
+      "angle": 120.38,
+      "exact_angle": 120.0,
+      "orb": 0.38,
+      "planet1": "Mercury",
+      "planet2": "Mars",
+      "type": "trine"
+    },
+    {
+      "angle": 90.39,
+      "exact_angle": 90.0,
+      "orb": 0.39,
+      "planet1": "Venus",
+      "planet2": "Pluto",
+      "type": "square"
+    },
+    {
+      "angle": 58.33,
+      "exact_angle": 60.0,
+      "orb": 1.67,
+      "planet1": "Neptune",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 117.5,
+      "exact_angle": 120.0,
+      "orb": 2.5,
+      "planet1": "Venus",
+      "planet2": "Saturn",
+      "type": "trine"
+    },
+    {
+      "angle": 117.24,
+      "exact_angle": 120.0,
+      "orb": 2.76,
+      "planet1": "Jupiter",
+      "planet2": "Uranus",
+      "type": "trine"
+    },
+    {
+      "angle": 86.85,
+      "exact_angle": 90.0,
+      "orb": 3.15,
+      "planet1": "Mars",
+      "planet2": "Uranus",
+      "type": "square"
+    },
+    {
+      "angle": 3.21,
+      "exact_angle": 0.0,
+      "orb": 3.21,
+      "planet1": "Sun",
+      "planet2": "Moon",
+      "type": "conjunction"
+    },
+    {
+      "angle": 55.8,
+      "exact_angle": 60.0,
+      "orb": 4.2,
+      "planet1": "Moon",
+      "planet2": "Pluto",
+      "type": "sextile"
+    },
+    {
+      "angle": 114.13,
+      "exact_angle": 120.0,
+      "orb": 5.87,
+      "planet1": "Moon",
+      "planet2": "Neptune",
+      "type": "trine"
+    },
+    {
+      "angle": 173.84,
+      "exact_angle": 180.0,
+      "orb": 6.16,
+      "planet1": "Jupiter",
+      "planet2": "Saturn",
+      "type": "opposition"
+    },
+    {
+      "angle": 83.71,
+      "exact_angle": 90.0,
+      "orb": 6.29,
+      "planet1": "Mercury",
+      "planet2": "Jupiter",
+      "type": "square"
+    }
+  ],
   "bodies": {
     "Chiron": {
       "degree_in_sign": null,
@@ -131,6 +221,12 @@
       "speed": 1.1621789306,
       "zodiac_sign": 1
     }
+  },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
   },
   "house_system": "P",
   "houses": {

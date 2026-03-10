@@ -47,6 +47,12 @@
       "Wasser": 0.4514469491
     }
   },
+  "house_quality": {
+    "flag": "exact",
+    "reason": null,
+    "requested": "placidus",
+    "system": "placidus"
+  },
   "input": {
     "date": "2000-02-04T15:00:00",
     "lat": 40.7128,
