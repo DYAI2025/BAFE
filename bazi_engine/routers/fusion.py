@@ -9,14 +9,12 @@ Endpoints:
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-
-_log = logging.getLogger(__name__)
 
 from ..bazi import compute_bazi
 from ..exc import BaziEngineError
@@ -32,6 +30,8 @@ from ..types import BaziInput, Fold
 from ..western import compute_western_chart
 from .shared import format_pillar, ProvenanceResponse
 from .western import HouseQuality
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/calculate", tags=["Fusion / Wu-Xing"])
 
@@ -168,7 +168,7 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
         return {
             "input": {"date": req.date, "tz": req.tz, "lon": req.lon, "lat": req.lat},
             "wu_xing_vector":  wx_dict,
-            "dominant_element": max(wx_dict, key=wx_dict.get),
+            "dominant_element": max(wx_dict, key=lambda k: wx_dict[k]),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time":  TST,
             "contribution_ledger": {"western": wx_ledger},

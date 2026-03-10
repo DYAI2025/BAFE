@@ -9,7 +9,6 @@ import os
 from typing import Any, Dict, Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from ..exc import BaziEngineError

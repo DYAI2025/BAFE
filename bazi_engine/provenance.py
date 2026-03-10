@@ -7,7 +7,7 @@ which engine version, ephemeris, ruleset, and parameters produced the result.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 

@@ -12,8 +12,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Query
-import math
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..transit import compute_transit_now, compute_transit_state, compute_transit_timeline

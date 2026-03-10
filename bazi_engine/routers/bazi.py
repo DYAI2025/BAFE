@@ -4,14 +4,12 @@ routers/bazi.py — POST /calculate/bazi
 from __future__ import annotations
 
 from datetime import timezone as _tz
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, Literal, Optional
 
 import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-
-_log = logging.getLogger(__name__)
 
 from ..bazi import compute_bazi, jdn_gregorian, sexagenary_day_index_from_date, hour_branch_index
 from ..constants import STEMS, BRANCHES, ANIMALS, DAY_OFFSET
@@ -20,6 +18,8 @@ from ..provenance import build_provenance
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy, apply_day_boundary
 from ..types import BaziInput, BaziResult, Fold
 from .shared import format_pillar, ProvenanceResponse
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/calculate", tags=["BaZi"])
 

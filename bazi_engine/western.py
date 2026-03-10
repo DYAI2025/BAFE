@@ -106,7 +106,7 @@ def compute_western_chart(
         raise RuntimeError("Failed to calculate houses with all attempted systems.")
 
     # Build house quality metadata
-    used_label = house_system_labels.get(used_sys, "unknown")
+    used_label = house_system_labels.get(used_sys, "unknown") if used_sys is not None else "unknown"
     requested_label = house_system_labels.get(requested_sys, "unknown")
     if used_sys == requested_sys:
         house_quality = {
@@ -170,7 +170,7 @@ def compute_western_chart(
 
     return {
         "jd_ut": jd_ut,
-        "house_system": used_sys.decode('utf-8'),
+        "house_system": used_sys.decode('utf-8') if used_sys is not None else "unknown",
         "bodies": bodies,
         "houses": houses,
         "angles": angles,

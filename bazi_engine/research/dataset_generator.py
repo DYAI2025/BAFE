@@ -13,18 +13,15 @@ Beschreibung realer astrologischer Muster.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Optional
-
 from ..wuxing.constants import WUXING_ORDER
-from ..wuxing.vector import WuXingVector
 from ..wuxing.analysis import (
     calculate_wuxing_vector_from_planets,
     calculate_wuxing_from_bazi,
     calculate_harmony_index,
 )
-from ..wuxing.zones import classify_zones, ZoneResult
+from ..wuxing.zones import classify_zones
 from ..wuxing.calibration import calibrate_harmony, CalibrationResult
 from ..phases.jieqi_phase import classify_jieqi_phase, JieqiPhase
 from ..phases.lunar_phase import classify_lunar_phase, LunarPhase

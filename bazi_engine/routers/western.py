@@ -4,20 +4,20 @@ routers/western.py — POST /calculate/western
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-_log = logging.getLogger(__name__)
-
 from ..exc import BaziEngineError
 from ..provenance import build_provenance, normalize_house_system
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..western import compute_western_chart
 from .shared import ProvenanceResponse
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/calculate", tags=["Western Astrology"])
 
