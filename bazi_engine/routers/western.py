@@ -77,9 +77,11 @@ def calculate_western_endpoint(req: WesternRequest) -> Dict[str, Any]:
             ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
         )
         dt_utc = dt_local.astimezone(timezone.utc)
-        result = compute_western_chart(dt_utc, req.lat, req.lon)
+        zodiac_mode = req.zodiac_mode or "tropical"
+        result = compute_western_chart(dt_utc, req.lat, req.lon, zodiac_mode=zodiac_mode)
         result["provenance"] = build_provenance(
             house_system=normalize_house_system(result.get("house_system")),
+            zodiac_mode=zodiac_mode,
         )
         return result
     except BaziEngineError:
