@@ -9,7 +9,9 @@ Endpoints:
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
+
+import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -19,7 +21,7 @@ from ..exc import BaziEngineError
 from ..provenance import build_provenance, normalize_house_system
 from ..fusion import (
     compute_fusion_analysis,
-    calculate_wuxing_vector_from_planets,
+    calculate_wuxing_vector_from_planets_with_ledger,
     equation_of_time,
     true_solar_time,
 )
@@ -27,6 +29,9 @@ from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTime
 from ..types import BaziInput, Fold
 from ..western import compute_western_chart
 from .shared import format_pillar, ProvenanceResponse
+from .western import HouseQuality
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/calculate", tags=["Fusion / Wu-Xing"])
 
@@ -49,9 +54,12 @@ class FusionResponse(BaseModel):
     input: Dict[str, Any]
     wu_xing_vectors: Dict[str, Dict[str, float]]
     harmony_index: Dict[str, Any]
+    calibration: Optional[Dict[str, Any]] = None
     elemental_comparison: Dict[str, Dict[str, float]]
     cosmic_state: float
     fusion_interpretation: str
+    contribution_ledger: Optional[Dict[str, Any]] = None
+    house_quality: Optional[HouseQuality] = None
     provenance: ProvenanceResponse
 
 
@@ -87,20 +95,25 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
                 "hour":  format_pillar(bazi_result.pillars.hour),
             }
 
+        ascendant = western_chart.get("angles", {}).get("Ascendant")
         fusion = compute_fusion_analysis(
             birth_utc_dt=dt_utc,
             latitude=req.lat,
             longitude=req.lon,
             bazi_pillars=pillars,
             western_bodies=western_chart["bodies"],
+            ascendant=ascendant,
         )
         return {
             "input": {"date": req.date, "tz": req.tz, "lon": req.lon, "lat": req.lat},
             "wu_xing_vectors":      fusion["wu_xing_vectors"],
             "harmony_index":        fusion["harmony_index"],
+            "calibration":          fusion["calibration"],
             "elemental_comparison": fusion["elemental_comparison"],
             "cosmic_state":         fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"],
+            "contribution_ledger": fusion["contribution_ledger"],
+            "house_quality": western_chart.get("house_quality"),
             "provenance": build_provenance(
                 house_system=normalize_house_system(western_chart.get("house_system")),
             ),
@@ -108,6 +121,7 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
@@ -128,6 +142,7 @@ class WxResponse(BaseModel):
     dominant_element: str
     equation_of_time: float
     true_solar_time: float
+    contribution_ledger: Optional[Dict[str, Any]] = None
     provenance: ProvenanceResponse
 
 
@@ -141,17 +156,22 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
         )
         dt_utc = dt.astimezone(timezone.utc)
         western_chart = compute_western_chart(dt_utc, req.lat, req.lon)
-        wx_vector = calculate_wuxing_vector_from_planets(western_chart["bodies"])
+        asc = western_chart.get("angles", {}).get("Ascendant")
+        wx_vector, wx_ledger = calculate_wuxing_vector_from_planets_with_ledger(
+            western_chart["bodies"], ascendant=asc,
+        )
         wx_norm = wx_vector.normalize()
+        wx_dict = wx_norm.to_dict()
         day_of_year = dt.timetuple().tm_yday
         civil_time_hours = dt.hour + dt.minute / 60
         TST = true_solar_time(civil_time_hours, req.lon, day_of_year)
         return {
             "input": {"date": req.date, "tz": req.tz, "lon": req.lon, "lat": req.lat},
-            "wu_xing_vector":  wx_norm.to_dict(),
-            "dominant_element": max(wx_norm.to_dict(), key=lambda k: wx_norm.to_dict()[k]),
+            "wu_xing_vector":  wx_dict,
+            "dominant_element": max(wx_dict, key=lambda k: wx_dict[k]),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time":  TST,
+            "contribution_ledger": {"western": wx_ledger},
             "provenance": build_provenance(
                 house_system=normalize_house_system(western_chart.get("house_system")),
             ),
@@ -159,6 +179,7 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
@@ -209,4 +230,5 @@ def calculate_tst_endpoint(req: TSTRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")

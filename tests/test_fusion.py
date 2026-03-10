@@ -262,6 +262,22 @@ class TestTrueSolarTimeFromCivil:
         assert 0 <= tst < 24
 
 
+def test_non_ledger_function_accepts_ascendant():
+    """Non-ledger variant must accept ascendant parameter."""
+    from bazi_engine.wuxing.analysis import (
+        calculate_wuxing_vector_from_planets,
+        calculate_wuxing_vector_from_planets_with_ledger,
+    )
+    bodies = {
+        "Sun": {"longitude": 100.0, "is_retrograde": False},
+        "Moon": {"longitude": 200.0, "is_retrograde": False},
+        "Mercury": {"longitude": 50.0, "is_retrograde": False},
+    }
+    v_with_asc = calculate_wuxing_vector_from_planets(bodies, ascendant=280.0)
+    v_ledger, _ = calculate_wuxing_vector_from_planets_with_ledger(bodies, ascendant=280.0)
+    assert v_with_asc.to_list() == v_ledger.to_list()
+
+
 _STANDARD_PILLARS = {
     "year":  {"stem": "Jia",  "branch": "Chen"},
     "month": {"stem": "Bing", "branch": "Yin"},

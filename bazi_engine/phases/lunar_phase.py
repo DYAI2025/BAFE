@@ -21,7 +21,6 @@ mit Mondphasen-Granularität ist Swiss Ephemeris zu bevorzugen.
 """
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
@@ -85,7 +84,6 @@ def _approximate_moon_sun_angle(dt: datetime) -> float:
     dt_utc = dt.astimezone(timezone.utc)
 
     # Referenz-Neumond: 2024-01-11T11:57:00 UTC
-    from datetime import timedelta
     NEW_MOON_REF = datetime(2024, 1, 11, 11, 57, 0, tzinfo=timezone.utc)
     LUNAR_PERIOD_DAYS = 29.530589
 

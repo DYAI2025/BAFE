@@ -1,8 +1,15 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
+import threading
+
 import swisseph as swe
+
+from .aspects import compute_aspects
+from .constants import AYANAMSHA_MODES
 from .ephemeris import SwissEphBackend, assert_no_moseph_fallback, datetime_utc_to_jd_ut
+
+_SWE_LOCK = threading.Lock()
 
 PLANETS = {
     "Sun": swe.SUN,
@@ -21,7 +28,7 @@ PLANETS = {
     "TrueNorthNode": swe.TRUE_NODE
 }
 
-@dataclass
+@dataclass(frozen=True)
 class WesternBody:
     name: str
     longitude: float
@@ -33,11 +40,12 @@ class WesternBody:
     degree_in_sign: float
 
 def compute_western_chart(
-    birth_utc_dt: Any, 
-    lat: float, 
-    lon: float, 
+    birth_utc_dt: Any,
+    lat: float,
+    lon: float,
     alt: float = 0.0,
-    ephe_path: Optional[str] = None
+    ephe_path: Optional[str] = None,
+    zodiac_mode: str = "tropical",
 ) -> Dict[str, Any]:
     """
     Compute basic western chart: Planets + Houses.
@@ -73,10 +81,13 @@ def compute_western_chart(
     # Fallback 2: Whole Sign ('W') - Always works
     
     house_systems = [b'P', b'O', b'W']
+    house_system_labels = {b'P': 'placidus', b'O': 'porphyry', b'W': 'whole_sign'}
+    requested_sys = house_systems[0]
     cusps = None
     ascmc = None
     used_sys = None
-    
+    fallback_reason: Optional[str] = None
+
     for sys_char in house_systems:
         try:
             c, a = swe.houses(jd_ut, lat, lon, sys_char)
@@ -85,7 +96,7 @@ def compute_western_chart(
                  continue
             cusps = c
             ascmc = a
-            used_sys = sys_char.decode('utf-8')
+            used_sys = sys_char
             break
         except swe.Error:
             continue
@@ -93,7 +104,27 @@ def compute_western_chart(
     if cusps is None or ascmc is None:
         # Should never happen with Whole Sign, but just in case
         raise RuntimeError("Failed to calculate houses with all attempted systems.")
-    
+
+    # Build house quality metadata
+    used_label = house_system_labels.get(used_sys, "unknown") if used_sys is not None else "unknown"
+    requested_label = house_system_labels.get(requested_sys, "unknown")
+    if used_sys == requested_sys:
+        house_quality = {
+            "flag": "exact",
+            "system": used_label,
+            "requested": requested_label,
+        }
+    else:
+        fallback_reason = (
+            f"Placidus undefined at latitude {abs(lat):.1f}°"
+        )
+        house_quality = {
+            "flag": "fallback",
+            "system": used_label,
+            "requested": requested_label,
+            "reason": fallback_reason,
+        }
+
     houses = {}
     # Handle different pyswisseph versions/behaviors
     # If len is 12, we assume 0-index. If 13, likely 1-index with 0=0.
@@ -103,17 +134,46 @@ def compute_western_chart(
     else:
         for i in range(1, 13):
             houses[str(i)] = cusps[i]
-        
+
     angles = {
         "Ascendant": ascmc[0],
         "MC": ascmc[1],
         "Vertex": ascmc[3] if len(ascmc) > 3 else 0.0
     }
 
+    # Apply ayanamsha correction for sidereal modes
+    if zodiac_mode in AYANAMSHA_MODES:
+        ayanamsha_id = AYANAMSHA_MODES[zodiac_mode]
+        with _SWE_LOCK:
+            swe.set_sid_mode(ayanamsha_id)
+            ayanamsha = swe.get_ayanamsa_ut(jd_ut)
+            swe.set_sid_mode(0)  # Reset — prevent global state leakage
+
+        # Adjust body longitudes
+        for body_data in bodies.values():
+            if "longitude" in body_data:
+                adj_lon = (body_data["longitude"] - ayanamsha) % 360
+                body_data["longitude"] = adj_lon
+                body_data["zodiac_sign"] = int(adj_lon // 30)
+                body_data["degree_in_sign"] = adj_lon % 30
+
+        # Adjust house cusps
+        for key in houses:
+            houses[key] = (houses[key] - ayanamsha) % 360
+
+        # Adjust angles
+        for key in angles:
+            angles[key] = (angles[key] - ayanamsha) % 360
+
+    # Compute planetary aspects (after any sidereal adjustment)
+    aspects = compute_aspects(bodies)
+
     return {
         "jd_ut": jd_ut,
-        "house_system": used_sys,
+        "house_system": used_sys.decode('utf-8') if used_sys is not None else "unknown",
         "bodies": bodies,
         "houses": houses,
-        "angles": angles
+        "angles": angles,
+        "house_quality": house_quality,
+        "aspects": aspects,
     }

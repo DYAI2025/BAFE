@@ -20,9 +20,8 @@ INTERPRETATIONSREGELN:
 from __future__ import annotations
 
 import math
-import random
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Optional
 
 from ..wuxing.constants import WUXING_ORDER
 from .dataset_generator import SyntheticBirthChart
@@ -238,7 +237,7 @@ def kruskal_wallis_test(
         KruskalWallisResult mit H-Statistik, p-Wert, Effektstärke.
     """
     groups_data = analyse_feature_by_phase(charts, feature, phase_attr, element)
-    group_values = [
+    _group_values = [
         [c for c in [
             (getattr(chart, phase_attr).name_pinyin
              if phase_attr == "jieqi"

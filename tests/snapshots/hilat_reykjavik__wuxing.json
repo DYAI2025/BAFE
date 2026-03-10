@@ -1,4 +1,121 @@
 {
+  "contribution_ledger": {
+    "western": [
+      {
+        "category": "traditional",
+        "element": "Feuer",
+        "is_retrograde": false,
+        "planet": "Sun",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "traditional",
+        "element": "Wasser",
+        "is_retrograde": false,
+        "planet": "Moon",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "traditional",
+        "chart_type_quality": "exact",
+        "element": "Erde",
+        "is_retrograde": false,
+        "planet": "Mercury",
+        "rationale": "Dual element — Erde (day chart)",
+        "weight": 1.0
+      },
+      {
+        "category": "traditional",
+        "element": "Metall",
+        "is_retrograde": false,
+        "planet": "Venus",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "traditional",
+        "element": "Feuer",
+        "is_retrograde": false,
+        "planet": "Mars",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "traditional",
+        "element": "Holz",
+        "is_retrograde": false,
+        "planet": "Jupiter",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "traditional",
+        "element": "Erde",
+        "is_retrograde": false,
+        "planet": "Saturn",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "modern_heuristic",
+        "element": "Holz",
+        "is_retrograde": true,
+        "planet": "Uranus",
+        "rationale": "Classical rulership",
+        "weight": 1.3
+      },
+      {
+        "category": "modern_heuristic",
+        "element": "Wasser",
+        "is_retrograde": false,
+        "planet": "Neptune",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "modern_heuristic",
+        "element": "Feuer",
+        "is_retrograde": false,
+        "planet": "Pluto",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "experimental",
+        "element": "Wasser",
+        "is_retrograde": false,
+        "planet": "Chiron",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "experimental",
+        "element": "Wasser",
+        "is_retrograde": false,
+        "planet": "Lilith",
+        "rationale": "Classical rulership",
+        "weight": 1.0
+      },
+      {
+        "category": "experimental",
+        "element": "Holz",
+        "is_retrograde": true,
+        "planet": "NorthNode",
+        "rationale": "Classical rulership",
+        "weight": 1.3
+      },
+      {
+        "category": "experimental",
+        "element": "Holz",
+        "is_retrograde": true,
+        "planet": "TrueNorthNode",
+        "rationale": "Classical rulership",
+        "weight": 1.3
+      }
+    ]
+  },
   "dominant_element": "Holz",
   "equation_of_time": -8.629,
   "input": {
@@ -9,8 +126,25 @@
   },
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
-    "ephemeris_id": "moshier_analytic",
+    "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
+    "parameter_set": {
+      "aspect_orbs": {
+        "conjunction": 8.0,
+        "opposition": 8.0,
+        "sextile": 6.0,
+        "square": 7.0,
+        "trine": 8.0
+      },
+      "harmony_method": "dot_product",
+      "hidden_stem_main_qi": 1.0,
+      "hidden_stem_middle_qi": 0.5,
+      "hidden_stem_residual_qi": 0.3,
+      "mercury_dual_rule": "earth_day_metal_night",
+      "retrograde_weight": 1.3,
+      "stem_weight": 1.0,
+      "version": "1.0.0"
+    },
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
     "tzdb_version_id": "unknown",
@@ -18,10 +152,10 @@
   },
   "true_solar_time": 9.8562,
   "wu_xing_vector": {
-    "Erde": 0.2916989528,
-    "Feuer": 0.4375484293,
-    "Holz": 0.7146624345,
-    "Metall": 0.1458494764,
-    "Wasser": 0.4375484293
+    "Erde": 0.27214033,
+    "Feuer": 0.4082104949,
+    "Holz": 0.6667438084,
+    "Metall": 0.136070165,
+    "Wasser": 0.5442806599
   }
 }

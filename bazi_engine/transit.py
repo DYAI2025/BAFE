@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import swisseph as swe
-from cachetools import TTLCache
+from cachetools import TTLCache  # type: ignore[import-untyped]
 
 from .ephemeris import SwissEphBackend, assert_no_moseph_fallback, datetime_utc_to_jd_ut
 

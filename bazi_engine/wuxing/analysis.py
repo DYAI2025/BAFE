@@ -46,12 +46,15 @@ def is_night_chart(sun_longitude: float, ascendant: Optional[float] = None) -> b
 def calculate_wuxing_vector_from_planets(
     bodies: Dict[str, Dict[str, Any]],
     use_retrograde_weight: bool = True,
+    ascendant: Optional[float] = None,
 ) -> WuXingVector:
     """Calculate Wu-Xing vector from a set of planetary positions.
 
     Args:
         bodies:                 Planetary data dict from compute_western_chart().
         use_retrograde_weight:  If True, retrograde planets carry 1.3× weight.
+        ascendant:              Ascendant longitude for day/night detection.
+                                If None, defaults to day chart (assumed_day quality).
 
     Returns:
         WuXingVector with raw (un-normalized) element scores.
@@ -59,7 +62,7 @@ def calculate_wuxing_vector_from_planets(
     values = [0.0, 0.0, 0.0, 0.0, 0.0]
     sun_data = bodies.get("Sun", {})
     sun_lon = sun_data.get("longitude", 0)
-    night = is_night_chart(sun_lon)
+    night = is_night_chart(sun_lon, ascendant)
 
     for planet, data in bodies.items():
         if "error" in data:
@@ -70,6 +73,64 @@ def calculate_wuxing_vector_from_planets(
         values[WUXING_INDEX[element]] += weight
 
     return WuXingVector(*values)
+
+
+def calculate_wuxing_vector_from_planets_with_ledger(
+    bodies: Dict[str, Dict[str, Any]],
+    use_retrograde_weight: bool = True,
+    ascendant: Optional[float] = None,
+) -> tuple[WuXingVector, list[dict[str, Any]]]:
+    """Like calculate_wuxing_vector_from_planets but also returns per-planet ledger.
+
+    Args:
+        bodies:                 Planetary data dict from compute_western_chart().
+        use_retrograde_weight:  If True, retrograde planets carry 1.3x weight.
+        ascendant:              Ascendant longitude for day/night detection.
+                                If None, defaults to day chart (assumed_day quality).
+    """
+    values = [0.0, 0.0, 0.0, 0.0, 0.0]
+    ledger: list[dict[str, Any]] = []
+    sun_data = bodies.get("Sun", {})
+    sun_lon = sun_data.get("longitude", 0)
+    night = is_night_chart(sun_lon, ascendant)
+    chart_type_quality = "exact" if ascendant is not None else "assumed_day"
+
+    traditional_planets = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
+    modern_planets = {"Uranus", "Neptune", "Pluto"}
+
+    for planet, data in bodies.items():
+        if "error" in data:
+            continue
+        is_retrograde = data.get("is_retrograde", False)
+        element = planet_to_wuxing(planet, night)
+        weight = 1.3 if (use_retrograde_weight and is_retrograde) else 1.0
+        values[WUXING_INDEX[element]] += weight
+
+        rationale = "Classical rulership"
+        if planet == "Mercury":
+            chart_type = "night chart" if night else "day chart"
+            rationale = f"Dual element — {element} ({chart_type})"
+
+        if planet in traditional_planets:
+            category = "traditional"
+        elif planet in modern_planets:
+            category = "modern_heuristic"
+        else:
+            category = "experimental"
+
+        entry: dict[str, Any] = {
+            "planet": planet,
+            "element": element,
+            "weight": weight,
+            "is_retrograde": is_retrograde,
+            "rationale": rationale,
+            "category": category,
+        }
+        if planet == "Mercury":
+            entry["chart_type_quality"] = chart_type_quality
+        ledger.append(entry)
+
+    return WuXingVector(*values), ledger
 
 
 # Hidden stems in Earthly Branches (藏干) with traditional Qi weights.
@@ -120,6 +181,44 @@ def calculate_wuxing_from_bazi(pillars: Dict[str, Dict[str, str]]) -> WuXingVect
             values[WUXING_INDEX[elem]] += weight
 
     return WuXingVector(*values)
+
+
+def calculate_wuxing_from_bazi_with_ledger(
+    pillars: Dict[str, Dict[str, str]],
+) -> tuple[WuXingVector, list[dict[str, Any]]]:
+    """Extract Wu-Xing vector from BaZi pillars with per-contribution ledger."""
+    values = [0.0, 0.0, 0.0, 0.0, 0.0]
+    ledger: list[dict[str, Any]] = []
+    _QI_LABELS = {1.0: "hidden_main", 0.5: "hidden_middle", 0.3: "hidden_residual"}
+
+    for pillar_name, pillar_data in pillars.items():
+        stem = pillar_data.get("stem", pillar_data.get("stamm", ""))
+        branch = pillar_data.get("branch", pillar_data.get("zweig", ""))
+
+        if stem in _STEM_TO_ELEMENT:
+            element = _STEM_TO_ELEMENT[stem]
+            values[WUXING_INDEX[element]] += 1.0
+            ledger.append({
+                "pillar": pillar_name,
+                "source": "stem",
+                "stem_name": stem,
+                "element": element,
+                "weight": 1.0,
+                "category": "traditional",
+            })
+
+        for elem, weight in _BRANCH_HIDDEN.get(branch, []):
+            values[WUXING_INDEX[elem]] += weight
+            ledger.append({
+                "pillar": pillar_name,
+                "source": _QI_LABELS.get(weight, "hidden"),
+                "branch_name": branch,
+                "element": elem,
+                "weight": weight,
+                "category": "traditional",
+            })
+
+    return WuXingVector(*values), ledger
 
 
 def calculate_harmony_index(

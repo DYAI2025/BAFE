@@ -24,8 +24,8 @@ Hinweis zu Anzeigewerten:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Literal, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Literal
 
 from .constants import WUXING_ORDER
 
@@ -305,7 +305,7 @@ def format_report_b(
         "═" * 55,
         "FUSION ANALYSE — DIAGNOSTISCHE KARTE (Logik B)",
         "═" * 55,
-        f"",
+        "",
         f"HARMONY INDEX: {harmony * 100:.2f} Indexpunkte ({harmony_label})",
         "(Cosinus-Ähnlichkeit der normierten Elementarvektoren)",
         "",

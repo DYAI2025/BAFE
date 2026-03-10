@@ -4,7 +4,9 @@ routers/western.py — POST /calculate/western
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Optional
+
+import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -14,6 +16,8 @@ from ..provenance import build_provenance, normalize_house_system
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..western import compute_western_chart
 from .shared import ProvenanceResponse
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/calculate", tags=["Western Astrology"])
 
@@ -25,6 +29,11 @@ class WesternRequest(BaseModel):
     lat: float = Field(52.52, description="Latitude in degrees")
     ambiguousTime: AmbiguousTimeChoice = Field("earlier")
     nonexistentTime: NonexistentTimePolicy = Field("error")
+    zodiac_mode: Optional[str] = Field(
+        "tropical",
+        pattern=r"^(tropical|sidereal_lahiri|sidereal_fagan_bradley|sidereal_raman)$",
+        description="Zodiac reference frame. Default: tropical.",
+    )
 
 
 class WesternBodyResponse(BaseModel):
@@ -37,12 +46,30 @@ class WesternBodyResponse(BaseModel):
     is_retrograde: bool = False
 
 
+class AspectResponse(BaseModel):
+    planet1: str
+    planet2: str
+    type: str
+    angle: float
+    orb: float
+    exact_angle: float
+
+
+class HouseQuality(BaseModel):
+    flag: str = Field(..., pattern=r"^(exact|fallback|estimated)$")
+    system: str
+    requested: str = "placidus"
+    reason: Optional[str] = None
+
+
 class WesternResponse(BaseModel):
     jd_ut: float
     house_system: str
     bodies: Dict[str, WesternBodyResponse]
     houses: Optional[Dict[str, float]] = None
     angles: Optional[Dict[str, float]] = None
+    aspects: List[AspectResponse] = []
+    house_quality: HouseQuality
     provenance: ProvenanceResponse
 
 
@@ -54,12 +81,15 @@ def calculate_western_endpoint(req: WesternRequest) -> Dict[str, Any]:
             ambiguous=req.ambiguousTime, nonexistent=req.nonexistentTime,
         )
         dt_utc = dt_local.astimezone(timezone.utc)
-        result = compute_western_chart(dt_utc, req.lat, req.lon)
+        zodiac_mode = req.zodiac_mode or "tropical"
+        result = compute_western_chart(dt_utc, req.lat, req.lon, zodiac_mode=zodiac_mode)
         result["provenance"] = build_provenance(
             house_system=normalize_house_system(result.get("house_system")),
+            zodiac_mode=zodiac_mode,
         )
         return result
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")

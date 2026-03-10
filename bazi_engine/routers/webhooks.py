@@ -12,7 +12,6 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from ..bazi import compute_bazi
-from ..constants import STEMS, BRANCHES
 from ..exc import BaziEngineError
 from ..fusion import compute_fusion_analysis
 from ..time_utils import resolve_local_iso, LocalTimeError

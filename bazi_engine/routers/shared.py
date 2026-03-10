@@ -5,7 +5,7 @@ Extracted from app.py to avoid duplication. Imported by individual routers.
 """
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -52,3 +52,4 @@ class ProvenanceResponse(BaseModel):
     house_system: str
     zodiac_mode: str
     computation_timestamp: str
+    parameter_set: Optional[Dict[str, Any]] = None

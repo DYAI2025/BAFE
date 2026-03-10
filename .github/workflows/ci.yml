@@ -37,6 +37,8 @@ jobs:
           cd /tmp/ephe
           curl -sLO https://www.astro.com/ftp/swisseph/ephe/sepl_18.se1
           curl -sLO https://www.astro.com/ftp/swisseph/ephe/semo_18.se1
+          curl -sLO https://www.astro.com/ftp/swisseph/ephe/seas_18.se1
+          curl -sLO https://www.astro.com/ftp/swisseph/ephe/seplm06.se1
         env:
           SE_EPHE_PATH: /tmp/ephe
 
@@ -98,6 +100,9 @@ jobs:
         uses: docker://openapitools/openapi-generator-cli
         with:
           args: generate -i spec/openapi/openapi.json -g typescript-fetch -o /github/workspace/generated/ts-client
+
+      - name: Fix generated file permissions
+        run: chmod -R u+w generated/ts-client
 
       - name: Compile generated client
         run: |

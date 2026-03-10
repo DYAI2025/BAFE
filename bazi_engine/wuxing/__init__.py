@@ -9,8 +9,10 @@ from .vector import WuXingVector
 from .analysis import (
     planet_to_wuxing,
     calculate_wuxing_vector_from_planets,
+    calculate_wuxing_vector_from_planets_with_ledger,
     is_night_chart,
     calculate_wuxing_from_bazi,
+    calculate_wuxing_from_bazi_with_ledger,
     calculate_harmony_index,
     interpret_harmony,
 )
@@ -31,8 +33,10 @@ __all__ = [
     "WuXingVector",
     "planet_to_wuxing",
     "calculate_wuxing_vector_from_planets",
+    "calculate_wuxing_vector_from_planets_with_ledger",
     "is_night_chart",
     "calculate_wuxing_from_bazi",
+    "calculate_wuxing_from_bazi_with_ledger",
     "calculate_harmony_index",
     "interpret_harmony",
     # Logik B — Zonenklassifikation

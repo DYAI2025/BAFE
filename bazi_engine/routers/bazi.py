@@ -3,18 +3,23 @@ routers/bazi.py — POST /calculate/bazi
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from datetime import timezone as _tz
+from typing import Any, Dict, Literal, Optional
+
+import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from ..bazi import compute_bazi
-from ..constants import STEMS, BRANCHES, ANIMALS
+from ..bazi import compute_bazi, jdn_gregorian, sexagenary_day_index_from_date, hour_branch_index
+from ..constants import STEMS, BRANCHES, ANIMALS, DAY_OFFSET
 from ..exc import BaziEngineError
 from ..provenance import build_provenance
-from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
-from ..types import BaziInput, Fold
+from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy, apply_day_boundary
+from ..types import BaziInput, BaziResult, Fold
 from .shared import format_pillar, ProvenanceResponse
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/calculate", tags=["BaZi"])
 
@@ -78,6 +83,56 @@ class BaziResponse(BaseModel):
     transition: BaziTransitionResponse
     solar_terms_count: int
     provenance: ProvenanceResponse
+    derivation_trace: Optional[Dict[str, Any]] = None
+
+
+def _build_derivation_trace(res: BaziResult, inp: BaziInput) -> Dict[str, Any]:
+    """Build derivation trace from computed BaziResult intermediate values."""
+    # Year trace: LiChun crossing
+    lichun_utc = res.lichun_local_dt.astimezone(
+        _tz.utc
+    ).isoformat()
+
+    # Month trace: jieqi crossing for current month boundary
+    month_boundary_dt = res.month_boundaries_local_dt[res.month_index]
+    month_boundary_utc = month_boundary_dt.astimezone(
+        _tz.utc
+    ).isoformat()
+    # Jie qi solar longitudes: month 0 (LiChun) = 315, each +30
+    solar_lon_deg = (315.0 + res.month_index * 30.0) % 360.0
+
+    # Day trace: JDN and sexagenary index
+    dt_for_day = apply_day_boundary(res.chart_local_dt, inp.day_boundary)
+    jdn = jdn_gregorian(dt_for_day.year, dt_for_day.month, dt_for_day.day)
+    sex_idx = sexagenary_day_index_from_date(
+        dt_for_day.year, dt_for_day.month, dt_for_day.day,
+    )
+
+    # Hour trace
+    hb = hour_branch_index(res.chart_local_dt)
+
+    return {
+        "year": {
+            "lichun_crossing_utc": lichun_utc,
+            "is_before_lichun": res.is_before_lichun,
+            "solar_longitude_lichun": 315.0,
+        },
+        "month": {
+            "jieqi_crossing_utc": month_boundary_utc,
+            "solar_longitude_deg": solar_lon_deg,
+            "month_branch_index": res.pillars.month.branch_index,
+        },
+        "day": {
+            "julian_day_number": jdn,
+            "sexagenary_index": sex_idx,
+            "day_offset_used": DAY_OFFSET,
+        },
+        "hour": {
+            "local_hour": res.chart_local_dt.hour,
+            "branch_index": hb,
+            "true_solar_time_used": inp.time_standard == "LMT",
+        },
+    }
 
 
 @router.post("/bazi", response_model=BaziResponse)
@@ -131,8 +186,10 @@ def calculate_bazi_endpoint(req: BaziRequest) -> Dict[str, Any]:
             },
             "solar_terms_count": len(res.solar_terms_local_dt) if res.solar_terms_local_dt else 0,
             "provenance": build_provenance(),
+            "derivation_trace": _build_derivation_trace(res, inp),
         }
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")

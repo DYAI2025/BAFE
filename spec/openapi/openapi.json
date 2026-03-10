@@ -817,6 +817,44 @@
         ],
         "title": "ApiResponse"
       },
+      "AspectResponse": {
+        "properties": {
+          "planet1": {
+            "type": "string",
+            "title": "Planet1"
+          },
+          "planet2": {
+            "type": "string",
+            "title": "Planet2"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "angle": {
+            "type": "number",
+            "title": "Angle"
+          },
+          "orb": {
+            "type": "number",
+            "title": "Orb"
+          },
+          "exact_angle": {
+            "type": "number",
+            "title": "Exact Angle"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planet1",
+          "planet2",
+          "type",
+          "angle",
+          "orb",
+          "exact_angle"
+        ],
+        "title": "AspectResponse"
+      },
       "BaziDates": {
         "properties": {
           "birth_local": {
@@ -1002,6 +1040,18 @@
           },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
+          },
+          "derivation_trace": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derivation Trace"
           }
         },
         "type": "object",
@@ -1491,6 +1541,18 @@
             "type": "object",
             "title": "Harmony Index"
           },
+          "calibration": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibration"
+          },
           "elemental_comparison": {
             "additionalProperties": {
               "additionalProperties": {
@@ -1508,6 +1570,28 @@
           "fusion_interpretation": {
             "type": "string",
             "title": "Fusion Interpretation"
+          },
+          "contribution_ledger": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Ledger"
+          },
+          "house_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HouseQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
@@ -1560,6 +1644,41 @@
           "status"
         ],
         "title": "HealthResponse"
+      },
+      "HouseQuality": {
+        "properties": {
+          "flag": {
+            "type": "string",
+            "pattern": "^(exact|fallback|estimated)$",
+            "title": "Flag"
+          },
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "requested": {
+            "type": "string",
+            "title": "Requested",
+            "default": "placidus"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag",
+          "system"
+        ],
+        "title": "HouseQuality"
       },
       "NarrativeRequest": {
         "properties": {
@@ -1827,6 +1946,18 @@
           "computation_timestamp": {
             "type": "string",
             "title": "Computation Timestamp"
+          },
+          "parameter_set": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Set"
           }
         },
         "type": "object",
@@ -2725,6 +2856,20 @@
             ],
             "title": "Nonexistenttime",
             "default": "error"
+          },
+          "zodiac_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(tropical|sidereal_lahiri|sidereal_fagan_bradley|sidereal_raman)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zodiac Mode",
+            "description": "Zodiac reference frame. Default: tropical.",
+            "default": "tropical"
           }
         },
         "type": "object",
@@ -2778,6 +2923,17 @@
             ],
             "title": "Angles"
           },
+          "aspects": {
+            "items": {
+              "$ref": "#/components/schemas/AspectResponse"
+            },
+            "type": "array",
+            "title": "Aspects",
+            "default": []
+          },
+          "house_quality": {
+            "$ref": "#/components/schemas/HouseQuality"
+          },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
           }
@@ -2787,6 +2943,7 @@
           "jd_ut",
           "house_system",
           "bodies",
+          "house_quality",
           "provenance"
         ],
         "title": "WesternResponse"
@@ -2958,6 +3115,18 @@
           "true_solar_time": {
             "type": "number",
             "title": "True Solar Time"
+          },
+          "contribution_ledger": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Ledger"
           },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"

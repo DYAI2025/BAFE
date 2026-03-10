@@ -42,6 +42,54 @@ def hidden_stems_for_branch(ruleset: Dict[str, Any], branch: str) -> List[str]:
         raise TypeError("hidden stems entry must be a list")
     return [str(x) for x in lst]
 
+def _find_group(groups: List[Dict[str, Any]], key_field: str, stem_index: int) -> Dict[str, Any]:
+    """Find the table group whose key_field list contains stem_index."""
+    for group in groups:
+        if stem_index in group[key_field]:
+            return group
+    raise KeyError(f"No group found for {key_field}={stem_index}")
+
+
+def month_stem_for_year_stem(
+    ruleset: Dict[str, Any], year_stem_index: int, month_index: int
+) -> int:
+    """Look up month stem index from the ruleset table.
+
+    Parameters
+    ----------
+    ruleset : loaded ruleset dict
+    year_stem_index : 0-9 (Jia..Gui)
+    month_index : 0-11 (Yin=0 .. Chou=11)
+
+    Returns
+    -------
+    int : stem index 0-9
+    """
+    rule = ruleset["month_stem_rule"]
+    group = _find_group(rule["groups"], "year_stems", year_stem_index)
+    return int(group["month_stems_by_month_index"][month_index])
+
+
+def hour_stem_for_day_stem(
+    ruleset: Dict[str, Any], day_stem_index: int, hour_branch_index: int
+) -> int:
+    """Look up hour stem index from the ruleset table.
+
+    Parameters
+    ----------
+    ruleset : loaded ruleset dict
+    day_stem_index : 0-9 (Jia..Gui)
+    hour_branch_index : 0-11 (Zi=0 .. Hai=11)
+
+    Returns
+    -------
+    int : stem index 0-9
+    """
+    rule = ruleset["hour_stem_rule"]
+    group = _find_group(rule["groups"], "day_stems", day_stem_index)
+    return int(group["hour_stems_by_hour_branch"][hour_branch_index])
+
+
 def day_cycle_anchor_status(ruleset: Dict[str, Any]) -> Tuple[Optional[int], str]:
     """
     Returns (anchor_jdn, anchor_verification).

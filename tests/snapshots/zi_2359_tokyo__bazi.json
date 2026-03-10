@@ -12,7 +12,29 @@
   "dates": {
     "birth_local": "2024-06-15T23:59:00+09:00",
     "birth_utc": "2024-06-15T14:59:00+00:00",
-    "lichun_local": "2024-02-04T17:27:08.086254+09:00"
+    "lichun_local": "2024-02-04T17:27:07.696757+09:00"
+  },
+  "derivation_trace": {
+    "day": {
+      "day_offset_used": 49,
+      "julian_day_number": 2460477,
+      "sexagenary_index": 46
+    },
+    "hour": {
+      "branch_index": 0,
+      "local_hour": 23,
+      "true_solar_time_used": false
+    },
+    "month": {
+      "jieqi_crossing_utc": "2024-06-05T04:09:53.810888+00:00",
+      "month_branch_index": 6,
+      "solar_longitude_deg": 75.0
+    },
+    "year": {
+      "is_before_lichun": false,
+      "lichun_crossing_utc": "2024-02-04T08:27:07.696757+00:00",
+      "solar_longitude_lichun": 315.0
+    }
   },
   "input": {
     "ambiguousTime": "earlier",
@@ -52,8 +74,25 @@
   },
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
-    "ephemeris_id": "moshier_analytic",
+    "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
+    "parameter_set": {
+      "aspect_orbs": {
+        "conjunction": 8.0,
+        "opposition": 8.0,
+        "sextile": 6.0,
+        "square": 7.0,
+        "trine": 8.0
+      },
+      "harmony_method": "dot_product",
+      "hidden_stem_main_qi": 1.0,
+      "hidden_stem_middle_qi": 0.5,
+      "hidden_stem_residual_qi": 0.3,
+      "mercury_dual_rule": "earth_day_metal_night",
+      "retrograde_weight": 1.3,
+      "stem_weight": 1.0,
+      "version": "1.0.0"
+    },
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
     "tzdb_version_id": "unknown",
@@ -62,8 +101,8 @@
   "solar_terms_count": 24,
   "transition": {
     "is_before_lichun": false,
-    "lichun_next": "2025-02-03T23:10:28.922452+09:00",
-    "lichun_year_start": "2024-02-04T17:27:08.086254+09:00",
+    "lichun_next": "2025-02-03T23:10:28.277756+09:00",
+    "lichun_year_start": "2024-02-04T17:27:07.696757+09:00",
     "solar_year": 2024
   }
 }

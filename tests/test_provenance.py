@@ -39,6 +39,7 @@ PROVENANCE_FIELDS = {
     "house_system",
     "zodiac_mode",
     "computation_timestamp",
+    "parameter_set",
 }
 
 # Standard test payload for endpoints that need date/location

@@ -7,11 +7,30 @@ which engine version, ephemeris, ruleset, and parameters produced the result.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from . import __version__
+
+
+WUXING_PARAMETER_SET: Dict[str, Any] = {
+    "version": "1.0.0",
+    "retrograde_weight": 1.3,
+    "hidden_stem_main_qi": 1.0,
+    "hidden_stem_middle_qi": 0.5,
+    "hidden_stem_residual_qi": 0.3,
+    "stem_weight": 1.0,
+    "mercury_dual_rule": "earth_day_metal_night",
+    "harmony_method": "dot_product",
+    "aspect_orbs": {
+        "conjunction": 8.0,
+        "sextile": 6.0,
+        "square": 7.0,
+        "trine": 8.0,
+        "opposition": 8.0,
+    },
+}
 
 
 HOUSE_SYSTEM_LABELS: Dict[str, str] = {
@@ -63,6 +82,10 @@ def _detect_ephemeris_id() -> str:
     return "swieph_sepl18"
 
 
+# Cache at module load — env var won't change during server lifetime
+_EPHEMERIS_ID: str = _detect_ephemeris_id()
+
+
 @dataclass(frozen=True)
 class Provenance:
     """Immutable provenance record attached to every /calculate/* response."""
@@ -104,10 +127,12 @@ def build_provenance(
         engine_version=__version__,
         parameter_set_id=parameter_set_id,
         ruleset_id=ruleset_id,
-        ephemeris_id=_detect_ephemeris_id(),
+        ephemeris_id=_EPHEMERIS_ID,
         tzdb_version_id=_detect_tzdb_version(),
         house_system=house_system,
         zodiac_mode=zodiac_mode,
         computation_timestamp=datetime.now(timezone.utc).isoformat(),
     )
-    return prov.to_dict()
+    result = prov.to_dict()
+    result["parameter_set"] = WUXING_PARAMETER_SET
+    return result
