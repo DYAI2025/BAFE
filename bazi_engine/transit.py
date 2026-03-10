@@ -6,6 +6,7 @@ Cached per hour (ADR-1: cachetools.TTLCache).
 """
 from __future__ import annotations
 
+import math
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -99,7 +100,9 @@ def compute_transit_now(
         sector_intensity[pdata["sector"]] += weight
 
     # Normalize to 0-1 range
-    max_val = max(sector_intensity) if max(sector_intensity) > 0 else 1.0
+    max_val = max(sector_intensity, default=0.0)
+    if math.isnan(max_val) or max_val <= 0:
+        max_val = 1.0
     sector_intensity = [round(v / max_val, 2) for v in sector_intensity]
 
     result = {

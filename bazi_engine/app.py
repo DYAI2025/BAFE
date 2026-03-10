@@ -54,13 +54,15 @@ async def request_validation_error_handler(
     serialize (NaN/Inf floats, Exception objects in Pydantic error ctx)."""
     import json as _json
 
-    def _sanitize(obj):  # type: ignore[no-untyped-def]
+    def _sanitize(obj, *, _depth: int = 0, _max_depth: int = 20):  # type: ignore[no-untyped-def]
+        if _depth >= _max_depth:
+            return "<nested>"
         if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
             return None
         if isinstance(obj, dict):
-            return {k: _sanitize(v) for k, v in obj.items()}
+            return {k: _sanitize(v, _depth=_depth + 1) for k, v in obj.items()}
         if isinstance(obj, (list, tuple)):
-            return [_sanitize(v) for v in obj]
+            return [_sanitize(v, _depth=_depth + 1) for v in obj]
         # Catch non-serializable objects (e.g. ValueError in Pydantic ctx)
         try:
             _json.dumps(obj)

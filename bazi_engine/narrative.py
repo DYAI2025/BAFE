@@ -6,39 +6,40 @@ Gemini async enrichment is a future enhancement.
 """
 from __future__ import annotations
 
+import string
 from typing import Any, Dict, List
 
 # German narrative templates keyed by event type
 _TEMPLATES = {
     "resonance_jump": {
-        "headline": "{planet} trifft dein {sign}-Feld",
+        "headline": "$planet trifft dein $sign-Feld",
         "body": (
-            "{planet} steht aktuell in deinem Sektor {sector} ({sign}). "
-            "Das ist einer deiner stärksten Bereiche \u2014 {personal_context}. "
+            "$planet steht aktuell in deinem Sektor $sector ($sign). "
+            "Das ist einer deiner stärksten Bereiche \u2014 $personal_context. "
             "Diese Konstellation bringt Energie und Aufmerksamkeit in dieses Feld."
         ),
         "advice": (
-            "Nutze die {planet}-Energie heute bewusst. "
-            "Dein {sign}-Feld ist aktiviert \u2014 ein guter Moment f\u00fcr Entscheidungen in diesem Bereich."
+            "Nutze die $planet-Energie heute bewusst. "
+            "Dein $sign-Feld ist aktiviert \u2014 ein guter Moment f\u00fcr Entscheidungen in diesem Bereich."
         ),
     },
     "moon_event": {
-        "headline": "Mond-Resonanz in deinem {sign}-Feld",
+        "headline": "Mond-Resonanz in deinem $sign-Feld",
         "body": (
-            "Der Mond durchquert gerade deinen Sektor {sector} ({sign}). "
-            "{personal_context}. "
+            "Der Mond durchquert gerade deinen Sektor $sector ($sign). "
+            "$personal_context. "
             "Emotionale Themen in diesem Bereich treten heute st\u00e4rker hervor."
         ),
         "advice": (
             "Achte heute besonders auf deine emotionalen Reaktionen. "
-            "Der Mond verst\u00e4rkt die Sensibilit\u00e4t in deinem {sign}-Bereich."
+            "Der Mond verst\u00e4rkt die Sensibilit\u00e4t in deinem $sign-Bereich."
         ),
     },
     "dominance_shift": {
         "headline": "Dein Schwerpunkt verschiebt sich",
         "body": (
-            "Eine neue dominante Energie entsteht in Sektor {sector} ({sign}). "
-            "{personal_context}."
+            "Eine neue dominante Energie entsteht in Sektor $sector ($sign). "
+            "$personal_context."
         ),
         "advice": "Beobachte, welche neuen Themen sich heute zeigen.",
     },
@@ -103,9 +104,9 @@ def generate_narrative(transit_state: Dict[str, Any]) -> Dict[str, Any]:
         "personal_context": personal_context,
     }
 
-    headline = template["headline"].format(**fmt)
-    body = template["body"].format(**fmt)
-    advice = template["advice"].format(**fmt)
+    headline = string.Template(template["headline"]).safe_substitute(fmt)
+    body = string.Template(template["body"]).safe_substitute(fmt)
+    advice = string.Template(template["advice"]).safe_substitute(fmt)
 
     pushworthy = primary.get("priority", 99) <= 1
 
