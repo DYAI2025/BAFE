@@ -123,3 +123,49 @@ class TestBaziContributionLedger:
         assert len(stems) == 4
         for s in stems:
             assert s["weight"] == 1.0
+
+
+@_skip_no_ephe
+class TestCategoryTags:
+    """Verify category assignment for contribution ledger entries."""
+
+    TRADITIONAL_PLANETS = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
+    MODERN_PLANETS = {"Uranus", "Neptune", "Pluto"}
+    EXPERIMENTAL_BODIES = {"Chiron", "Lilith", "North Node", "South Node"}
+
+    def _western_ledger(self):
+        r = client.post("/calculate/fusion", json=PAYLOAD)
+        assert r.status_code == 200
+        return r.json()["contribution_ledger"]["western"]
+
+    def _bazi_ledger(self):
+        r = client.post("/calculate/fusion", json=PAYLOAD)
+        assert r.status_code == 200
+        return r.json()["contribution_ledger"]["bazi"]
+
+    def test_traditional_planets_tagged_traditional(self):
+        for entry in self._western_ledger():
+            if entry["planet"] in self.TRADITIONAL_PLANETS:
+                assert entry["category"] == "traditional", (
+                    f"{entry['planet']} should be traditional, got {entry['category']}"
+                )
+
+    def test_modern_planets_tagged_modern_heuristic(self):
+        for entry in self._western_ledger():
+            if entry["planet"] in self.MODERN_PLANETS:
+                assert entry["category"] == "modern_heuristic", (
+                    f"{entry['planet']} should be modern_heuristic, got {entry['category']}"
+                )
+
+    def test_experimental_bodies_tagged_experimental(self):
+        for entry in self._western_ledger():
+            if entry["planet"] in self.EXPERIMENTAL_BODIES:
+                assert entry["category"] == "experimental", (
+                    f"{entry['planet']} should be experimental, got {entry['category']}"
+                )
+
+    def test_bazi_entries_all_traditional(self):
+        for entry in self._bazi_ledger():
+            assert entry["category"] == "traditional", (
+                f"BaZi entry for {entry['pillar']}/{entry['source']} should be traditional"
+            )
