@@ -27,6 +27,7 @@ from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTime
 from ..types import BaziInput, Fold
 from ..western import compute_western_chart
 from .shared import format_pillar, ProvenanceResponse
+from .western import HouseQuality
 
 router = APIRouter(prefix="/calculate", tags=["Fusion / Wu-Xing"])
 
@@ -52,6 +53,7 @@ class FusionResponse(BaseModel):
     elemental_comparison: Dict[str, Dict[str, float]]
     cosmic_state: float
     fusion_interpretation: str
+    house_quality: Optional[HouseQuality] = None
     provenance: ProvenanceResponse
 
 
@@ -101,6 +103,7 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
             "elemental_comparison": fusion["elemental_comparison"],
             "cosmic_state":         fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"],
+            "house_quality": western_chart.get("house_quality"),
             "provenance": build_provenance(
                 house_system=normalize_house_system(western_chart.get("house_system")),
             ),

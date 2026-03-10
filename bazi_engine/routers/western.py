@@ -4,7 +4,7 @@ routers/western.py — POST /calculate/western
 from __future__ import annotations
 
 from datetime import timezone
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -37,12 +37,20 @@ class WesternBodyResponse(BaseModel):
     is_retrograde: bool = False
 
 
+class HouseQuality(BaseModel):
+    flag: str = Field(..., pattern=r"^(exact|fallback|estimated)$")
+    system: str
+    requested: str = "placidus"
+    reason: Optional[str] = None
+
+
 class WesternResponse(BaseModel):
     jd_ut: float
     house_system: str
     bodies: Dict[str, WesternBodyResponse]
     houses: Optional[Dict[str, float]] = None
     angles: Optional[Dict[str, float]] = None
+    house_quality: HouseQuality
     provenance: ProvenanceResponse
 
 
