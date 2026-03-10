@@ -54,7 +54,11 @@ def compute_aspects(
     aspects: List[Dict[str, Any]] = []
 
     for i, p1 in enumerate(planets):
+        if p1 not in bodies or bodies[p1].get("longitude") is None:
+            continue
         for p2 in planets[i + 1:]:
+            if p2 not in bodies or bodies[p2].get("longitude") is None:
+                continue
             lon1 = bodies[p1]["longitude"]
             lon2 = bodies[p2]["longitude"]
             dist = _angular_distance(lon1, lon2)
