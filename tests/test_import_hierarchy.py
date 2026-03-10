@@ -31,6 +31,7 @@ ENGINE_ROOT = REPO_ROOT / "bazi_engine"
 LAYERS: Dict[str, int] = {
     "constants":   0,
     "exc":         0,  # exception hierarchy — zero internal deps
+    "provenance":  1,  # only imports __version__ — no domain deps
     "types":       1,
     "ephemeris":   2,
     "time_utils":  2,
