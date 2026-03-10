@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Tuple
 
 # Aspect definitions: (name, exact_angle, default_orb)
+# Orb values are also documented in provenance.WUXING_PARAMETER_SET["aspect_orbs"]
 ASPECT_DEFS: List[Tuple[str, float, float]] = [
     ("conjunction", 0.0, 8.0),
     ("sextile", 60.0, 6.0),

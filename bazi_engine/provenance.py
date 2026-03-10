@@ -23,6 +23,13 @@ WUXING_PARAMETER_SET: Dict[str, Any] = {
     "stem_weight": 1.0,
     "mercury_dual_rule": "earth_day_metal_night",
     "harmony_method": "dot_product",
+    "aspect_orbs": {
+        "conjunction": 8.0,
+        "sextile": 6.0,
+        "square": 7.0,
+        "trine": 8.0,
+        "opposition": 8.0,
+    },
 }
 
 

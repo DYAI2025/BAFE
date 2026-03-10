@@ -63,3 +63,13 @@ class TestParameterSet:
         r = client.post("/calculate/wuxing", json=PAYLOAD)
         data = r.json()
         assert "parameter_set" in data["provenance"]
+
+
+def test_parameter_set_contains_aspect_orbs():
+    """Aspect orbs must be documented in parameter_set."""
+    from bazi_engine.provenance import WUXING_PARAMETER_SET
+    assert "aspect_orbs" in WUXING_PARAMETER_SET
+    orbs = WUXING_PARAMETER_SET["aspect_orbs"]
+    assert "conjunction" in orbs
+    assert "opposition" in orbs
+    assert orbs["conjunction"] == 8.0
