@@ -13,6 +13,9 @@ import pytest
 
 from bazi_engine.types import BaziInput
 from bazi_engine.bazi import compute_bazi
+from tests.golden_reference_cases import EXTENDED_GOLDEN_CASES
+
+# --- Original 4 golden cases (Berlin + Madrid) ---
 
 GOLDEN_CASES = [
     (
@@ -64,3 +67,27 @@ def test_golden(name, inp, exp):
     res = compute_bazi(inp)
     got = (str(res.pillars.year), str(res.pillars.month), str(res.pillars.day), str(res.pillars.hour))
     assert got == exp
+
+
+# --- Extended golden cases (12 additional: geographic, LiChun, zi-hour, historical) ---
+
+_EXTENDED_PARAMS = [
+    (case_id, BaziInput(
+        birth_local=birth_local,
+        timezone=tz,
+        longitude_deg=lon,
+        latitude_deg=lat,
+    ), expected)
+    for case_id, birth_local, tz, lon, lat, expected, _source in EXTENDED_GOLDEN_CASES
+]
+
+@pytest.mark.parametrize(
+    "name, inp, exp",
+    _EXTENDED_PARAMS,
+    ids=[c[0] for c in _EXTENDED_PARAMS],
+)
+def test_golden_extended(name, inp, exp):
+    """Extended golden suite: geographic diversity, LiChun boundary, zi-hour, historical."""
+    res = compute_bazi(inp)
+    got = (str(res.pillars.year), str(res.pillars.month), str(res.pillars.day), str(res.pillars.hour))
+    assert got == exp, f"Case {name} failed. Expected {exp}, got {got}"
