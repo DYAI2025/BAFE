@@ -46,12 +46,15 @@ def is_night_chart(sun_longitude: float, ascendant: Optional[float] = None) -> b
 def calculate_wuxing_vector_from_planets(
     bodies: Dict[str, Dict[str, Any]],
     use_retrograde_weight: bool = True,
+    ascendant: Optional[float] = None,
 ) -> WuXingVector:
     """Calculate Wu-Xing vector from a set of planetary positions.
 
     Args:
         bodies:                 Planetary data dict from compute_western_chart().
         use_retrograde_weight:  If True, retrograde planets carry 1.3× weight.
+        ascendant:              Ascendant longitude for day/night detection.
+                                If None, defaults to day chart (assumed_day quality).
 
     Returns:
         WuXingVector with raw (un-normalized) element scores.
@@ -59,7 +62,7 @@ def calculate_wuxing_vector_from_planets(
     values = [0.0, 0.0, 0.0, 0.0, 0.0]
     sun_data = bodies.get("Sun", {})
     sun_lon = sun_data.get("longitude", 0)
-    night = is_night_chart(sun_lon)
+    night = is_night_chart(sun_lon, ascendant)
 
     for planet, data in bodies.items():
         if "error" in data:
