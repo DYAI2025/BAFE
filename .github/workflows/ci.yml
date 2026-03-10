@@ -117,6 +117,6 @@ jobs:
       - name: Compile generated client
         run: |
           cd generated/ts-client
-          npm install
+          [ -f package.json ] || echo '{"private":true}' > package.json
           npm install typescript --save-dev
           npx tsc --noEmit --esModuleInterop --target es2020 --module commonjs --moduleResolution node index.ts

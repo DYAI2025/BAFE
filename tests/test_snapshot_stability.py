@@ -231,8 +231,10 @@ def test_snapshot_stability(
 
 
 # Tolerance for floating-point comparison across platforms.
-# Swiss Ephemeris house calculations differ at ~1e-10 between macOS and Linux.
-_FLOAT_RTOL = 1e-8
+# Swiss Ephemeris calculations differ between macOS and Linux:
+# - House cusps: ~1e-10 degrees
+# - Planet speeds: ~1e-7 deg/day (especially Lilith, a calculated point)
+_FLOAT_RTOL = 1e-6
 
 
 def _approx_equal(a: Any, b: Any) -> bool:
