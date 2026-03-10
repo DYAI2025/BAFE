@@ -11,6 +11,13 @@ from .jieqi import compute_month_boundaries_from_lichun, compute_24_solar_terms_
 from .exc import CalculationError, NotSupportedError
 
 from .constants import DAY_OFFSET
+from .bafe.ruleset_loader import (
+    load_ruleset,
+    month_stem_for_year_stem,
+    hour_stem_for_day_stem,
+)
+
+_DEFAULT_RULESET_ID = "standard_bazi_2026"
 
 def jdn_gregorian(y: int, m: int, d: int) -> int:
     a = (14 - m) // 12
@@ -28,16 +35,30 @@ def year_pillar_from_solar_year(solar_year: int) -> Pillar:
     idx60 = (solar_year - 1984) % 60
     return pillar_from_index60(idx60)
 
-def month_pillar_from_year_stem(year_stem_index: int, month_index: int) -> Pillar:
+def month_pillar_from_year_stem(
+    year_stem_index: int,
+    month_index: int,
+    ruleset: dict[str, object] | None = None,
+) -> Pillar:
     branch_index = (2 + month_index) % 12
-    stem_index = (year_stem_index * 2 + 2 + month_index) % 10
+    if ruleset is not None:
+        stem_index = month_stem_for_year_stem(ruleset, year_stem_index, month_index)
+    else:
+        stem_index = (year_stem_index * 2 + 2 + month_index) % 10
     return Pillar(stem_index, branch_index)
 
 def hour_branch_index(dt_local: datetime) -> int:
     return ((dt_local.hour + 1) // 2) % 12
 
-def hour_pillar_from_day_stem(day_stem_index: int, hour_branch: int) -> Pillar:
-    stem_index = (day_stem_index * 2 + hour_branch) % 10
+def hour_pillar_from_day_stem(
+    day_stem_index: int,
+    hour_branch: int,
+    ruleset: dict[str, object] | None = None,
+) -> Pillar:
+    if ruleset is not None:
+        stem_index = hour_stem_for_day_stem(ruleset, day_stem_index, hour_branch)
+    else:
+        stem_index = (day_stem_index * 2 + hour_branch) % 10
     return Pillar(stem_index, hour_branch)
 
 def _lichun_jd_ut_for_year(year: int, backend: SwissEphBackend) -> float:
@@ -53,6 +74,12 @@ def _lichun_jd_ut_for_year(year: int, backend: SwissEphBackend) -> float:
 def compute_bazi(inp: BaziInput) -> BaziResult:
     if inp.ephemeris_backend.lower() != "swisseph":
         raise NotSupportedError("v0.2 ships a skyfield stub only; swisseph is implemented.")
+
+    # Load externalized ruleset for stem lookup tables
+    try:
+        ruleset = load_ruleset(_DEFAULT_RULESET_ID)
+    except (FileNotFoundError, ValueError):
+        ruleset = None  # Graceful fallback to formula-based calculation
 
     backend = SwissEphBackend(ephe_path=inp.ephe_path)
 
@@ -98,7 +125,7 @@ def compute_bazi(inp: BaziInput) -> BaziResult:
         if month_bounds_local[k] <= chart_local_dt < month_bounds_local[k + 1]:
             month_index = k
             break
-    month_p = month_pillar_from_year_stem(year_p.stem_index, month_index)
+    month_p = month_pillar_from_year_stem(year_p.stem_index, month_index, ruleset=ruleset)
 
     # Day pillar
     # v0.4 Configurable Day Anchor
@@ -118,7 +145,7 @@ def compute_bazi(inp: BaziInput) -> BaziResult:
 
     # Hour pillar
     hb = hour_branch_index(chart_local_dt)
-    hour_p = hour_pillar_from_day_stem(day_p.stem_index, hb)
+    hour_p = hour_pillar_from_day_stem(day_p.stem_index, hb, ruleset=ruleset)
 
     pillars = FourPillars(year=year_p, month=month_p, day=day_p, hour=hour_p)
 

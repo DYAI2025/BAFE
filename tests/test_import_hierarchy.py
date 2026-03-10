@@ -66,7 +66,7 @@ LAYERS: Dict[str, int] = {
     "bafe.harmonics":       5,
     "bafe.canonical_json":  5,
     "bafe.errors":          5,
-    "bafe.ruleset_loader":  5,
+    "bafe.ruleset_loader":  2,  # pure data loader: stdlib-only, no internal deps
     # routers and services also live at Layer 5
     "routers.shared":       5,
     "routers.info":         5,
