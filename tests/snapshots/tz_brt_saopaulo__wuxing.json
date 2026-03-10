@@ -9,7 +9,7 @@
   },
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
-    "ephemeris_id": "moshier_analytic",
+    "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
@@ -18,10 +18,10 @@
   },
   "true_solar_time": 12.0003,
   "wu_xing_vector": {
-    "Erde": 0.3411621889,
-    "Feuer": 0.4449941595,
-    "Holz": 0.6823243779,
-    "Metall": 0.1483313865,
-    "Wasser": 0.4449941595
+    "Erde": 0.3175814226,
+    "Feuer": 0.4142366381,
+    "Holz": 0.6351628451,
+    "Metall": 0.1380788794,
+    "Wasser": 0.5523155175
   }
 }

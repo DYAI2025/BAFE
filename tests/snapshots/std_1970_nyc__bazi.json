@@ -12,7 +12,29 @@
   "dates": {
     "birth_local": "1970-09-01T15:45:00-04:00",
     "birth_utc": "1970-09-01T19:45:00+00:00",
-    "lichun_local": "1970-02-04T00:45:42.782843-05:00"
+    "lichun_local": "1970-02-04T00:45:43.942402-05:00"
+  },
+  "derivation_trace": {
+    "day": {
+      "day_offset_used": 49,
+      "julian_day_number": 2440831,
+      "sexagenary_index": 20
+    },
+    "hour": {
+      "branch_index": 8,
+      "local_hour": 15,
+      "true_solar_time_used": false
+    },
+    "month": {
+      "jieqi_crossing_utc": "1970-08-07T22:54:05.491938+00:00",
+      "month_branch_index": 8,
+      "solar_longitude_deg": 135.0
+    },
+    "year": {
+      "is_before_lichun": false,
+      "lichun_crossing_utc": "1970-02-04T05:45:43.942402+00:00",
+      "solar_longitude_lichun": 315.0
+    }
   },
   "input": {
     "ambiguousTime": "earlier",
@@ -52,7 +74,7 @@
   },
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
-    "ephemeris_id": "moshier_analytic",
+    "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
@@ -62,8 +84,8 @@
   "solar_terms_count": 24,
   "transition": {
     "is_before_lichun": false,
-    "lichun_next": "1971-02-04T06:25:24.055839-05:00",
-    "lichun_year_start": "1970-02-04T00:45:42.782843-05:00",
+    "lichun_next": "1971-02-04T06:25:23.497242-05:00",
+    "lichun_year_start": "1970-02-04T00:45:43.942402-05:00",
     "solar_year": 1970
   }
 }

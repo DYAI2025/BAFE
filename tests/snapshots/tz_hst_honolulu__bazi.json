@@ -12,7 +12,29 @@
   "dates": {
     "birth_local": "2024-04-15T12:00:00-10:00",
     "birth_utc": "2024-04-15T22:00:00+00:00",
-    "lichun_local": "2024-02-03T22:27:08.086254-10:00"
+    "lichun_local": "2024-02-03T22:27:07.696757-10:00"
+  },
+  "derivation_trace": {
+    "day": {
+      "day_offset_used": 49,
+      "julian_day_number": 2460416,
+      "sexagenary_index": 45
+    },
+    "hour": {
+      "branch_index": 6,
+      "local_hour": 12,
+      "true_solar_time_used": false
+    },
+    "month": {
+      "jieqi_crossing_utc": "2024-04-04T07:02:17.775019+00:00",
+      "month_branch_index": 4,
+      "solar_longitude_deg": 15.0
+    },
+    "year": {
+      "is_before_lichun": false,
+      "lichun_crossing_utc": "2024-02-04T08:27:07.696757+00:00",
+      "solar_longitude_lichun": 315.0
+    }
   },
   "input": {
     "ambiguousTime": "earlier",
@@ -52,7 +74,7 @@
   },
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
-    "ephemeris_id": "moshier_analytic",
+    "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
@@ -62,8 +84,8 @@
   "solar_terms_count": 24,
   "transition": {
     "is_before_lichun": false,
-    "lichun_next": "2025-02-03T04:10:28.922452-10:00",
-    "lichun_year_start": "2024-02-03T22:27:08.086254-10:00",
+    "lichun_next": "2025-02-03T04:10:28.277756-10:00",
+    "lichun_year_start": "2024-02-03T22:27:07.696757-10:00",
     "solar_year": 2024
   }
 }

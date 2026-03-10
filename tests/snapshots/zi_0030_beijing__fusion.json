@@ -1,33 +1,33 @@
 {
-  "cosmic_state": 0.9439,
+  "cosmic_state": 0.9252,
   "elemental_comparison": {
     "Erde": {
       "bazi": 0.249,
-      "difference": 0.052,
-      "western": 0.301
+      "difference": 0.03,
+      "western": 0.28
     },
     "Feuer": {
       "bazi": 0.192,
-      "difference": 0.26,
-      "western": 0.451
+      "difference": 0.228,
+      "western": 0.419
     },
     "Holz": {
       "bazi": 0.863,
-      "difference": -0.171,
-      "western": 0.692
+      "difference": -0.22,
+      "western": 0.643
     },
     "Metall": {
       "bazi": 0.192,
-      "difference": -0.041,
-      "western": 0.15
+      "difference": -0.052,
+      "western": 0.14
     },
     "Wasser": {
       "bazi": 0.345,
-      "difference": 0.106,
-      "western": 0.451
+      "difference": 0.214,
+      "western": 0.559
     }
   },
-  "fusion_interpretation": "Harmonie-Index: 94.39%\nStarke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie\n\nWestliche Dominanz: Holz\nÖstliche Dominanz: Holz\n\nIhre westliche und östliche Chart stehen in starker Resonanz.\nDie Energien ergänzen sich harmonisch.",
+  "fusion_interpretation": "Harmonie-Index: 92.52%\nStarke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie\n\nWestliche Dominanz: Holz\nÖstliche Dominanz: Holz\n\nIhre westliche und östliche Chart stehen in starker Resonanz.\nDie Energien ergänzen sich harmonisch.",
   "harmony_index": {
     "bazi_vector": {
       "Erde": 0.249355313,
@@ -36,15 +36,15 @@
       "Metall": 0.1918117792,
       "Wasser": 0.3452612026
     },
-    "harmony_index": 0.9439,
+    "harmony_index": 0.9252,
     "interpretation": "Starke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie",
     "method": "dot_product",
     "western_vector": {
-      "Erde": 0.3009646327,
-      "Feuer": 0.4514469491,
-      "Holz": 0.6922186552,
-      "Metall": 0.1504823164,
-      "Wasser": 0.4514469491
+      "Erde": 0.2796177442,
+      "Feuer": 0.4194266163,
+      "Holz": 0.6431208117,
+      "Metall": 0.1398088721,
+      "Wasser": 0.5592354884
     }
   },
   "house_quality": {
@@ -61,7 +61,7 @@
   },
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
-    "ephemeris_id": "moshier_analytic",
+    "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
@@ -77,11 +77,11 @@
       "Wasser": 0.3452612026
     },
     "western_planets": {
-      "Erde": 0.3009646327,
-      "Feuer": 0.4514469491,
-      "Holz": 0.6922186552,
-      "Metall": 0.1504823164,
-      "Wasser": 0.4514469491
+      "Erde": 0.2796177442,
+      "Feuer": 0.4194266163,
+      "Holz": 0.6431208117,
+      "Metall": 0.1398088721,
+      "Wasser": 0.5592354884
     }
   }
 }

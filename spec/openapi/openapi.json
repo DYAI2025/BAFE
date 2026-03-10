@@ -817,6 +817,44 @@
         ],
         "title": "ApiResponse"
       },
+      "AspectResponse": {
+        "properties": {
+          "planet1": {
+            "type": "string",
+            "title": "Planet1"
+          },
+          "planet2": {
+            "type": "string",
+            "title": "Planet2"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "angle": {
+            "type": "number",
+            "title": "Angle"
+          },
+          "orb": {
+            "type": "number",
+            "title": "Orb"
+          },
+          "exact_angle": {
+            "type": "number",
+            "title": "Exact Angle"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planet1",
+          "planet2",
+          "type",
+          "angle",
+          "orb",
+          "exact_angle"
+        ],
+        "title": "AspectResponse"
+      },
       "BaziDates": {
         "properties": {
           "birth_local": {
@@ -1002,6 +1040,18 @@
           },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
+          },
+          "derivation_trace": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derivation Trace"
           }
         },
         "type": "object",
@@ -1509,6 +1559,16 @@
             "type": "string",
             "title": "Fusion Interpretation"
           },
+          "house_quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HouseQuality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
           }
@@ -1560,6 +1620,41 @@
           "status"
         ],
         "title": "HealthResponse"
+      },
+      "HouseQuality": {
+        "properties": {
+          "flag": {
+            "type": "string",
+            "pattern": "^(exact|fallback|estimated)$",
+            "title": "Flag"
+          },
+          "system": {
+            "type": "string",
+            "title": "System"
+          },
+          "requested": {
+            "type": "string",
+            "title": "Requested",
+            "default": "placidus"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag",
+          "system"
+        ],
+        "title": "HouseQuality"
       },
       "NarrativeRequest": {
         "properties": {
@@ -2725,6 +2820,20 @@
             ],
             "title": "Nonexistenttime",
             "default": "error"
+          },
+          "zodiac_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(tropical|sidereal_lahiri|sidereal_fagan_bradley|sidereal_raman)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zodiac Mode",
+            "description": "Zodiac reference frame. Default: tropical.",
+            "default": "tropical"
           }
         },
         "type": "object",
@@ -2778,6 +2887,17 @@
             ],
             "title": "Angles"
           },
+          "aspects": {
+            "items": {
+              "$ref": "#/components/schemas/AspectResponse"
+            },
+            "type": "array",
+            "title": "Aspects",
+            "default": []
+          },
+          "house_quality": {
+            "$ref": "#/components/schemas/HouseQuality"
+          },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
           }
@@ -2787,6 +2907,7 @@
           "jd_ut",
           "house_system",
           "bodies",
+          "house_quality",
           "provenance"
         ],
         "title": "WesternResponse"
