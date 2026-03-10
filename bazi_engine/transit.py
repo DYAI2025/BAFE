@@ -132,6 +132,11 @@ def compute_transit_state(
     Returns:
         Transit State JSON conforming to TRANSIT_STATE_v1 schema
     """
+    if len(soulprint_sectors) != 12 or len(quiz_sectors) != 12:
+        raise ValueError(
+            f"Sector arrays must have exactly 12 elements. "
+            f"Got soulprint={len(soulprint_sectors)}, quiz={len(quiz_sectors)}"
+        )
     transit_now = compute_transit_now(dt_utc=dt_utc, ephe_path=ephe_path)
     if dt_utc is None:
         dt_utc = datetime.now(timezone.utc)

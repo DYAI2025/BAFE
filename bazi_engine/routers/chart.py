@@ -316,5 +316,5 @@ def chart_endpoint(req: ChartRequest) -> Dict[str, Any]:
         })
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")

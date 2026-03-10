@@ -17,12 +17,28 @@ def _se1_files_available() -> bool:
     return all((path / name).exists() for name in EPHEMERIS_FILES_REQUIRED)
 
 
+_HAS_SE1 = _se1_files_available()
+
 # If SE1 files are not present and EPHEMERIS_MODE is not explicitly set,
-# default to MOSEPH for the test suite.  This preserves the pre-existing test
-# behaviour (AUTO used to silently fall back) while production code now
-# refuses to silently degrade.
-if not os.environ.get("EPHEMERIS_MODE") and not _se1_files_available():
+# default to MOSEPH so the bulk of the test suite can still run.
+# Tests that specifically validate SWIEPH behavior should use @pytest.mark.swieph.
+if not os.environ.get("EPHEMERIS_MODE") and not _HAS_SE1:
     os.environ["EPHEMERIS_MODE"] = "MOSEPH"
+
+
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line("markers", "swieph: requires Swiss Ephemeris SE1 files")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip @pytest.mark.swieph tests when SE1 files are not available."""
+    if _HAS_SE1:
+        return
+    skip_swieph = pytest.mark.skip(reason="SE1 files not available (set SE_EPHE_PATH)")
+    for item in items:
+        if "swieph" in item.keywords:
+            item.add_marker(skip_swieph)
 
 
 @pytest.fixture(autouse=True)

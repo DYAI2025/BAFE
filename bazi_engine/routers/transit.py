@@ -12,7 +12,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Query
-from pydantic import BaseModel, Field
+import math
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..transit import compute_transit_now, compute_transit_state, compute_transit_timeline
 from ..narrative import generate_narrative
@@ -81,8 +83,18 @@ class NarrativeResponse(BaseModel):
 # ── Request models ───────────────────────────────────────────────────────────
 
 class TransitStateRequest(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)
+
     soulprint_sectors: List[float] = Field(..., min_length=12, max_length=12)
     quiz_sectors: List[float] = Field(..., min_length=12, max_length=12)
+
+    @field_validator("soulprint_sectors", "quiz_sectors")
+    @classmethod
+    def validate_sector_values(cls, v: List[float]) -> List[float]:
+        for i, val in enumerate(v):
+            if val < 0 or val > 1:
+                raise ValueError(f"Element {i} = {val} not in range [0, 1]")
+        return v
 
 
 class NarrativeRequest(BaseModel):
@@ -102,9 +114,16 @@ def transit_now(
     """Current planetary positions from Swiss Ephemeris."""
     dt_utc = None
     if datetime_param:
-        dt_utc = datetime.fromisoformat(
-            datetime_param.replace("Z", "+00:00")
-        ).astimezone(timezone.utc)
+        try:
+            dt_utc = datetime.fromisoformat(
+                datetime_param.replace("Z", "+00:00")
+            ).astimezone(timezone.utc)
+        except (ValueError, TypeError):
+            from ..exc import InputError
+            raise InputError(
+                f"Invalid datetime format: {datetime_param!r}",
+                detail={"parameter": "datetime", "value": datetime_param},
+            )
     return compute_transit_now(dt_utc=dt_utc)
 
 

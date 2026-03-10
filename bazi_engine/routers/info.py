@@ -121,8 +121,8 @@ def api_endpoint(
         return {"sonne": sign_name, "input": {"datum": datum, "zeit": zeit, "ort": ort, "tz": tz, "lat": lat, "lon": lon}}
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
 @router.get("/info/wuxing-mapping", response_model=WuxingMappingResponse)

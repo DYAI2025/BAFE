@@ -14,7 +14,7 @@ from ..exc import BaziEngineError
 from ..provenance import build_provenance
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..types import BaziInput, Fold
-from .shared import format_pillar
+from .shared import format_pillar, ProvenanceResponse
 
 router = APIRouter(prefix="/calculate", tags=["BaZi"])
 
@@ -68,17 +68,6 @@ class BaziTransitionResponse(BaseModel):
     is_before_lichun: bool
     lichun_year_start: str
     lichun_next: Optional[str] = None
-
-
-class ProvenanceResponse(BaseModel):
-    engine_version: str
-    parameter_set_id: str
-    ruleset_id: str
-    ephemeris_id: str
-    tzdb_version_id: str
-    house_system: str
-    zodiac_mode: str
-    computation_timestamp: str
 
 
 class BaziResponse(BaseModel):
@@ -145,5 +134,5 @@ def calculate_bazi_endpoint(req: BaziRequest) -> Dict[str, Any]:
         }
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")
