@@ -1,0 +1,81 @@
+{
+  "cosmic_state": 0.8883,
+  "elemental_comparison": {
+    "Erde": {
+      "bazi": 0.668,
+      "difference": -0.367,
+      "western": 0.301
+    },
+    "Feuer": {
+      "bazi": 0.278,
+      "difference": 0.173,
+      "western": 0.451
+    },
+    "Holz": {
+      "bazi": 0.557,
+      "difference": 0.135,
+      "western": 0.692
+    },
+    "Metall": {
+      "bazi": 0.278,
+      "difference": -0.128,
+      "western": 0.15
+    },
+    "Wasser": {
+      "bazi": 0.297,
+      "difference": 0.154,
+      "western": 0.451
+    }
+  },
+  "fusion_interpretation": "Harmonie-Index: 88.83%\nStarke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie\n\nWestliche Dominanz: Holz\nÖstliche Dominanz: Erde\n\nIhre westliche und östliche Chart stehen in starker Resonanz.\nDie Energien ergänzen sich harmonisch.",
+  "harmony_index": {
+    "bazi_vector": {
+      "Erde": 0.6682728183,
+      "Feuer": 0.2784470076,
+      "Holz": 0.5568940152,
+      "Metall": 0.2784470076,
+      "Wasser": 0.2970101414
+    },
+    "harmony_index": 0.8883,
+    "interpretation": "Starke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie",
+    "method": "dot_product",
+    "western_vector": {
+      "Erde": 0.3009646327,
+      "Feuer": 0.4514469491,
+      "Holz": 0.6922186552,
+      "Metall": 0.1504823164,
+      "Wasser": 0.4514469491
+    }
+  },
+  "input": {
+    "date": "2000-02-04T09:00:00",
+    "lat": 40.7128,
+    "lon": -74.006,
+    "tz": "America/New_York"
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "wu_xing_vectors": {
+    "bazi_pillars": {
+      "Erde": 0.6682728183,
+      "Feuer": 0.2784470076,
+      "Holz": 0.5568940152,
+      "Metall": 0.2784470076,
+      "Wasser": 0.2970101414
+    },
+    "western_planets": {
+      "Erde": 0.3009646327,
+      "Feuer": 0.4514469491,
+      "Holz": 0.6922186552,
+      "Metall": 0.1504823164,
+      "Wasser": 0.4514469491
+    }
+  }
+}

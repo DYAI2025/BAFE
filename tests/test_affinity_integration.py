@@ -19,6 +19,8 @@ pytestmark = pytest.mark.integration
 def skip_if_no_leandeep():
     if not client.health():
         pytest.skip("LeanDeep nicht erreichbar")
+    if not client.has_vad_support():
+        pytest.skip("LeanDeep-Marker liefern keine VAD-Daten")
 
 
 class TestPhysicalTouchDerivation:

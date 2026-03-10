@@ -11,9 +11,10 @@ from pydantic import BaseModel, Field
 from ..bazi import compute_bazi
 from ..constants import STEMS, BRANCHES, ANIMALS
 from ..exc import BaziEngineError
+from ..provenance import build_provenance
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..types import BaziInput, Fold
-from .shared import format_pillar
+from .shared import format_pillar, ProvenanceResponse
 
 router = APIRouter(prefix="/calculate", tags=["BaZi"])
 
@@ -62,12 +63,21 @@ class BaziDatesResponse(BaseModel):
     lichun_local: str
 
 
+class BaziTransitionResponse(BaseModel):
+    solar_year: int
+    is_before_lichun: bool
+    lichun_year_start: str
+    lichun_next: Optional[str] = None
+
+
 class BaziResponse(BaseModel):
     input: BaziRequest
     pillars: BaziPillarsResponse
     chinese: ChineseSection
     dates: BaziDatesResponse
+    transition: BaziTransitionResponse
     solar_terms_count: int
+    provenance: ProvenanceResponse
 
 
 @router.post("/bazi", response_model=BaziResponse)
@@ -120,8 +130,9 @@ def calculate_bazi_endpoint(req: BaziRequest) -> Dict[str, Any]:
                 "lichun_next": res.lichun_next_local_dt.isoformat() if res.lichun_next_local_dt else None,
             },
             "solar_terms_count": len(res.solar_terms_local_dt) if res.solar_terms_local_dt else 0,
+            "provenance": build_provenance(),
         }
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")

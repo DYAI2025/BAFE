@@ -993,9 +993,15 @@
           "dates": {
             "$ref": "#/components/schemas/BaziDatesResponse"
           },
+          "transition": {
+            "$ref": "#/components/schemas/BaziTransitionResponse"
+          },
           "solar_terms_count": {
             "type": "integer",
             "title": "Solar Terms Count"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -1004,7 +1010,9 @@
           "pillars",
           "chinese",
           "dates",
-          "solar_terms_count"
+          "transition",
+          "solar_terms_count",
+          "provenance"
         ],
         "title": "BaziResponse"
       },
@@ -1077,6 +1085,40 @@
           "lichun_year_start"
         ],
         "title": "BaziTransition"
+      },
+      "BaziTransitionResponse": {
+        "properties": {
+          "solar_year": {
+            "type": "integer",
+            "title": "Solar Year"
+          },
+          "is_before_lichun": {
+            "type": "boolean",
+            "title": "Is Before Lichun"
+          },
+          "lichun_year_start": {
+            "type": "string",
+            "title": "Lichun Year Start"
+          },
+          "lichun_next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lichun Next"
+          }
+        },
+        "type": "object",
+        "required": [
+          "solar_year",
+          "is_before_lichun",
+          "lichun_year_start"
+        ],
+        "title": "BaziTransitionResponse"
       },
       "BuildResponse": {
         "properties": {
@@ -1466,6 +1508,9 @@
           "fusion_interpretation": {
             "type": "string",
             "title": "Fusion Interpretation"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -1475,7 +1520,8 @@
           "harmony_index",
           "elemental_comparison",
           "cosmic_state",
-          "fusion_interpretation"
+          "fusion_interpretation",
+          "provenance"
         ],
         "title": "FusionResponse"
       },
@@ -1518,9 +1564,7 @@
       "NarrativeRequest": {
         "properties": {
           "transit_state": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Transit State"
+            "$ref": "#/components/schemas/TransitStateInput"
           }
         },
         "type": "object",
@@ -1750,6 +1794,54 @@
         ],
         "title": "Position"
       },
+      "ProvenanceResponse": {
+        "properties": {
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "parameter_set_id": {
+            "type": "string",
+            "title": "Parameter Set Id"
+          },
+          "ruleset_id": {
+            "type": "string",
+            "title": "Ruleset Id"
+          },
+          "ephemeris_id": {
+            "type": "string",
+            "title": "Ephemeris Id"
+          },
+          "tzdb_version_id": {
+            "type": "string",
+            "title": "Tzdb Version Id"
+          },
+          "house_system": {
+            "type": "string",
+            "title": "House System"
+          },
+          "zodiac_mode": {
+            "type": "string",
+            "title": "Zodiac Mode"
+          },
+          "computation_timestamp": {
+            "type": "string",
+            "title": "Computation Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine_version",
+          "parameter_set_id",
+          "ruleset_id",
+          "ephemeris_id",
+          "tzdb_version_id",
+          "house_system",
+          "zodiac_mode",
+          "computation_timestamp"
+        ],
+        "title": "ProvenanceResponse"
+      },
       "RingSectors": {
         "properties": {
           "sectors": {
@@ -1859,6 +1951,9 @@
           "true_solar_time_formatted": {
             "type": "string",
             "title": "True Solar Time Formatted"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -1868,7 +1963,8 @@
           "longitude_correction_hours",
           "equation_of_time_hours",
           "true_solar_time_hours",
-          "true_solar_time_formatted"
+          "true_solar_time_formatted",
+          "provenance"
         ],
         "title": "TSTResponse"
       },
@@ -2003,6 +2099,59 @@
         ],
         "title": "TransitContribution"
       },
+      "TransitEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^(resonance_jump|dominance_shift|moon_event)$",
+            "title": "Type",
+            "description": "Event type identifier."
+          },
+          "priority": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Priority",
+            "description": "Priority (1 = highest)."
+          },
+          "sector": {
+            "type": "integer",
+            "maximum": 11.0,
+            "minimum": 0.0,
+            "title": "Sector",
+            "description": "Zodiac sector index (0-11)."
+          },
+          "trigger_planet": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Trigger Planet",
+            "description": "Planet that triggered the event (empty string for dominance_shift)."
+          },
+          "description_de": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description De",
+            "description": "German description of the event."
+          },
+          "personal_context": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Personal Context",
+            "description": "Personal context message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "priority",
+          "sector",
+          "trigger_planet",
+          "description_de",
+          "personal_context"
+        ],
+        "title": "TransitEvent",
+        "description": "A single transit event as produced by compute_transit_state()."
+      },
       "TransitNowResponse": {
         "properties": {
           "computed_at": {
@@ -2031,6 +2180,49 @@
           "sector_intensity"
         ],
         "title": "TransitNowResponse"
+      },
+      "TransitStateInput": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "pattern": "^TRANSIT_STATE_v\\d+$",
+            "title": "Schema",
+            "description": "Schema version identifier.",
+            "default": "TRANSIT_STATE_v1"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "ISO 8601 UTC timestamp of generation."
+          },
+          "ring": {
+            "$ref": "#/components/schemas/RingSectors"
+          },
+          "transit_contribution": {
+            "$ref": "#/components/schemas/TransitContribution"
+          },
+          "delta": {
+            "$ref": "#/components/schemas/Delta"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TransitEvent"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Events",
+            "description": "Detected transit events."
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "ring",
+          "transit_contribution",
+          "delta"
+        ],
+        "title": "TransitStateInput",
+        "description": "Typed transit state matching the TRANSIT_STATE_v1 schema."
       },
       "TransitStateRequest": {
         "properties": {
@@ -2547,6 +2739,10 @@
             "type": "number",
             "title": "Jd Ut"
           },
+          "house_system": {
+            "type": "string",
+            "title": "House System"
+          },
           "bodies": {
             "additionalProperties": {
               "$ref": "#/components/schemas/WesternBodyResponse"
@@ -2581,12 +2777,17 @@
               }
             ],
             "title": "Angles"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
         "required": [
           "jd_ut",
-          "bodies"
+          "house_system",
+          "bodies",
+          "provenance"
         ],
         "title": "WesternResponse"
       },
@@ -2757,6 +2958,9 @@
           "true_solar_time": {
             "type": "number",
             "title": "True Solar Time"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -2765,7 +2969,8 @@
           "wu_xing_vector",
           "dominant_element",
           "equation_of_time",
-          "true_solar_time"
+          "true_solar_time",
+          "provenance"
         ],
         "title": "WxResponse"
       },

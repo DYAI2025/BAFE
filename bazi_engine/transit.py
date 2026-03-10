@@ -6,13 +6,14 @@ Cached per hour (ADR-1: cachetools.TTLCache).
 """
 from __future__ import annotations
 
+import math
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import swisseph as swe
 from cachetools import TTLCache
 
-from .ephemeris import SwissEphBackend, datetime_utc_to_jd_ut
+from .ephemeris import SwissEphBackend, assert_no_moseph_fallback, datetime_utc_to_jd_ut
 
 # Planet IDs for transit calculation (7 classical planets)
 TRANSIT_PLANETS = {
@@ -82,7 +83,8 @@ def compute_transit_now(
     planets: Dict[str, Dict[str, Any]] = {}
 
     for name, pid in TRANSIT_PLANETS.items():
-        (lon_deg, _lat, _dist, speed_lon, _, _), _ret = swe.calc_ut(jd_ut, pid, flags)
+        (lon_deg, _lat, _dist, speed_lon, _, _), ret = swe.calc_ut(jd_ut, pid, flags)
+        assert_no_moseph_fallback(flags, ret)
         sector = int(lon_deg // 30)
         planets[name] = {
             "longitude": round(lon_deg, 1),
@@ -98,7 +100,9 @@ def compute_transit_now(
         sector_intensity[pdata["sector"]] += weight
 
     # Normalize to 0-1 range
-    max_val = max(sector_intensity) if max(sector_intensity) > 0 else 1.0
+    max_val = max(sector_intensity, default=0.0)
+    if math.isnan(max_val) or max_val <= 0:
+        max_val = 1.0
     sector_intensity = [round(v / max_val, 2) for v in sector_intensity]
 
     result = {
@@ -131,6 +135,11 @@ def compute_transit_state(
     Returns:
         Transit State JSON conforming to TRANSIT_STATE_v1 schema
     """
+    if len(soulprint_sectors) != 12 or len(quiz_sectors) != 12:
+        raise ValueError(
+            f"Sector arrays must have exactly 12 elements. "
+            f"Got soulprint={len(soulprint_sectors)}, quiz={len(quiz_sectors)}"
+        )
     transit_now = compute_transit_now(dt_utc=dt_utc, ephe_path=ephe_path)
     if dt_utc is None:
         dt_utc = datetime.now(timezone.utc)

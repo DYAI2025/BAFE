@@ -1,0 +1,27 @@
+{
+  "dominant_element": "Holz",
+  "equation_of_time": -2.904,
+  "input": {
+    "date": "2000-01-01T00:01:00",
+    "lat": -33.8688,
+    "lon": 151.2093,
+    "tz": "Australia/Sydney"
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "true_solar_time": 23.9683,
+  "wu_xing_vector": {
+    "Erde": 0.3411621889,
+    "Feuer": 0.4449941595,
+    "Holz": 0.6823243779,
+    "Metall": 0.1483313865,
+    "Wasser": 0.4449941595
+  }
+}

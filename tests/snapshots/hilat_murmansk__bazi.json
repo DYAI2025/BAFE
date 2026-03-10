@@ -1,0 +1,69 @@
+{
+  "chinese": {
+    "day_master": "Ding",
+    "hour_master": "Jia",
+    "month_master": "Xin",
+    "year": {
+      "animal": "Dragon",
+      "branch": "Chen",
+      "stem": "Jia"
+    }
+  },
+  "dates": {
+    "birth_local": "2024-08-01T08:00:00+03:00",
+    "birth_utc": "2024-08-01T05:00:00+00:00",
+    "lichun_local": "2024-02-04T11:27:08.086254+03:00"
+  },
+  "input": {
+    "ambiguousTime": "earlier",
+    "boundary": "midnight",
+    "date": "2024-08-01T08:00:00",
+    "lat": 68.9585,
+    "lon": 33.0838,
+    "nonexistentTime": "error",
+    "standard": "CIVIL",
+    "tz": "Europe/Moscow"
+  },
+  "pillars": {
+    "day": {
+      "element": "Feuer",
+      "stamm": "Ding",
+      "tier": "Hahn",
+      "zweig": "You"
+    },
+    "hour": {
+      "element": "Holz",
+      "stamm": "Jia",
+      "tier": "Drache",
+      "zweig": "Chen"
+    },
+    "month": {
+      "element": "Metall",
+      "stamm": "Xin",
+      "tier": "Ziege",
+      "zweig": "Wei"
+    },
+    "year": {
+      "element": "Holz",
+      "stamm": "Jia",
+      "tier": "Drache",
+      "zweig": "Chen"
+    }
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "solar_terms_count": 24,
+  "transition": {
+    "is_before_lichun": false,
+    "lichun_next": "2025-02-03T17:10:28.922452+03:00",
+    "lichun_year_start": "2024-02-04T11:27:08.086254+03:00",
+    "solar_year": 2024
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "cosmic_state": 0.9133,
+  "elemental_comparison": {
+    "Erde": {
+      "bazi": 0.648,
+      "difference": -0.347,
+      "western": 0.301
+    },
+    "Feuer": {
+      "bazi": 0.354,
+      "difference": 0.098,
+      "western": 0.451
+    },
+    "Holz": {
+      "bazi": 0.491,
+      "difference": 0.201,
+      "western": 0.692
+    },
+    "Metall": {
+      "bazi": 0.098,
+      "difference": 0.052,
+      "western": 0.15
+    },
+    "Wasser": {
+      "bazi": 0.452,
+      "difference": -0.0,
+      "western": 0.451
+    }
+  },
+  "fusion_interpretation": "Harmonie-Index: 91.33%\nStarke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie\n\nWestliche Dominanz: Holz\nÖstliche Dominanz: Erde\n\nIhre westliche und östliche Chart stehen in starker Resonanz.\nDie Energien ergänzen sich harmonisch.",
+  "harmony_index": {
+    "bazi_vector": {
+      "Erde": 0.6481812161,
+      "Feuer": 0.3535533906,
+      "Holz": 0.4910463758,
+      "Metall": 0.0982092752,
+      "Wasser": 0.4517626658
+    },
+    "harmony_index": 0.9133,
+    "interpretation": "Starke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie",
+    "method": "dot_product",
+    "western_vector": {
+      "Erde": 0.3009646327,
+      "Feuer": 0.4514469491,
+      "Holz": 0.6922186552,
+      "Metall": 0.1504823164,
+      "Wasser": 0.4514469491
+    }
+  },
+  "input": {
+    "date": "2024-02-04T23:30:00",
+    "lat": 40.4168,
+    "lon": -3.7038,
+    "tz": "Europe/Madrid"
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "wu_xing_vectors": {
+    "bazi_pillars": {
+      "Erde": 0.6481812161,
+      "Feuer": 0.3535533906,
+      "Holz": 0.4910463758,
+      "Metall": 0.0982092752,
+      "Wasser": 0.4517626658
+    },
+    "western_planets": {
+      "Erde": 0.3009646327,
+      "Feuer": 0.4514469491,
+      "Holz": 0.6922186552,
+      "Metall": 0.1504823164,
+      "Wasser": 0.4514469491
+    }
+  }
+}

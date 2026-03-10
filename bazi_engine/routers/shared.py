@@ -6,6 +6,9 @@ Extracted from app.py to avoid duplication. Imported by individual routers.
 from __future__ import annotations
 
 from typing import Dict
+
+from pydantic import BaseModel
+
 from ..types import Pillar
 from ..constants import STEMS, BRANCHES
 
@@ -38,3 +41,14 @@ def format_pillar(pillar: Pillar) -> Dict[str, str]:
         "tier": BRANCH_TO_ANIMAL[branch],
         "element": STEM_TO_ELEMENT[stem],
     }
+
+
+class ProvenanceResponse(BaseModel):
+    engine_version: str
+    parameter_set_id: str
+    ruleset_id: str
+    ephemeris_id: str
+    tzdb_version_id: str
+    house_system: str
+    zodiac_mode: str
+    computation_timestamp: str
