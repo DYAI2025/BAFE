@@ -1,11 +1,15 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
+import threading
+
 import swisseph as swe
 
 from .aspects import compute_aspects
 from .constants import AYANAMSHA_MODES
 from .ephemeris import SwissEphBackend, assert_no_moseph_fallback, datetime_utc_to_jd_ut
+
+_SWE_LOCK = threading.Lock()
 
 PLANETS = {
     "Sun": swe.SUN,
@@ -24,7 +28,7 @@ PLANETS = {
     "TrueNorthNode": swe.TRUE_NODE
 }
 
-@dataclass
+@dataclass(frozen=True)
 class WesternBody:
     name: str
     longitude: float
@@ -140,8 +144,10 @@ def compute_western_chart(
     # Apply ayanamsha correction for sidereal modes
     if zodiac_mode in AYANAMSHA_MODES:
         ayanamsha_id = AYANAMSHA_MODES[zodiac_mode]
-        swe.set_sid_mode(ayanamsha_id)
-        ayanamsha = swe.get_ayanamsa_ut(jd_ut)
+        with _SWE_LOCK:
+            swe.set_sid_mode(ayanamsha_id)
+            ayanamsha = swe.get_ayanamsa_ut(jd_ut)
+            swe.set_sid_mode(0)  # Reset — prevent global state leakage
 
         # Adjust body longitudes
         for body_data in bodies.values():

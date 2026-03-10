@@ -217,6 +217,27 @@ class TestPlanetConstants:
         assert "TrueNorthNode" in PLANET_NAMES
 
 
+class TestWesternBodyFrozen:
+    """Tests for WesternBody immutability."""
+
+    def test_western_body_is_frozen(self):
+        """WesternBody dataclass must be frozen per project convention."""
+        try:
+            from bazi_engine.western import WesternBody
+        except ImportError as e:
+            if "swisseph" in str(e):
+                pytest.skip("swisseph not installed")
+            raise
+        import dataclasses
+        assert dataclasses.fields(WesternBody)
+        body = WesternBody(
+            name="Sun", longitude=0.0, latitude=0.0, distance=1.0,
+            speed_long=1.0, is_retrograde=False, zodiac_sign=0, degree_in_sign=0.0,
+        )
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            body.longitude = 99.0
+
+
 class TestWesternBodyDataclass:
     """Tests for WesternBody dataclass."""
 
@@ -267,6 +288,25 @@ class TestLongitudeValidation:
         for lon in [0.0, 15.5, 29.999, 45.0, 359.999]:
             deg = lon % 30
             assert 0 <= deg < 30
+
+
+def test_sidereal_does_not_pollute_global_state():
+    """swe.set_sid_mode must be reset after sidereal computation."""
+    import swisseph as swe
+    jd_test = swe.julday(2024, 6, 15, 12.0)
+    swe.set_sid_mode(0)  # Fagan-Bradley baseline
+    ayan_before = swe.get_ayanamsa_ut(jd_test)
+
+    from bazi_engine.western import compute_western_chart
+    from datetime import datetime, timezone
+    dt = datetime(2024, 6, 15, 12, 0, tzinfo=timezone.utc)
+    compute_western_chart(dt, 52.52, 13.405, zodiac_mode="sidereal_lahiri")
+
+    swe.set_sid_mode(0)
+    ayan_after = swe.get_ayanamsa_ut(jd_test)
+    assert abs(ayan_before - ayan_after) < 0.001, (
+        f"swe global state polluted: before={ayan_before}, after={ayan_after}"
+    )
 
 
 class TestJulianDay:

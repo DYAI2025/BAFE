@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict, List
 
 STEMS: List[str] = ["Jia", "Yi", "Bing", "Ding", "Wu", "Ji", "Geng", "Xin", "Ren", "Gui"]
