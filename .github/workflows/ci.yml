@@ -35,12 +35,22 @@ jobs:
         run: |
           mkdir -p /tmp/ephe
           cd /tmp/ephe
-          curl -sLO https://www.astro.com/ftp/swisseph/ephe/sepl_18.se1
-          curl -sLO https://www.astro.com/ftp/swisseph/ephe/semo_18.se1
-          curl -sLO https://www.astro.com/ftp/swisseph/ephe/seas_18.se1
-          curl -sLO https://www.astro.com/ftp/swisseph/ephe/seplm06.se1
+          curl -sLO https://github.com/aloistr/swisseph/raw/master/ephe/sepl_18.se1
+          curl -sLO https://github.com/aloistr/swisseph/raw/master/ephe/semo_18.se1
+          curl -sLO https://github.com/aloistr/swisseph/raw/master/ephe/seas_18.se1
+          curl -sLO https://github.com/aloistr/swisseph/raw/master/ephe/seplm06.se1
         env:
           SE_EPHE_PATH: /tmp/ephe
+
+      - name: Verify ephemeris files are binary (not HTML error pages)
+        run: |
+          for f in /tmp/ephe/*.se1; do
+            if head -c 5 "$f" | grep -q '<'; then
+              echo "ERROR: $f contains HTML, not ephemeris data"
+              exit 1
+            fi
+          done
+          echo "All ephemeris files verified as binary"
 
       - name: Run tests
         run: pytest -v --tb=short
@@ -102,7 +112,7 @@ jobs:
           args: generate -i spec/openapi/openapi.json -g typescript-fetch -o /github/workspace/generated/ts-client
 
       - name: Fix generated file permissions
-        run: chmod -R u+w generated/ts-client
+        run: sudo chmod -R u+w generated/ts-client
 
       - name: Compile generated client
         run: |
