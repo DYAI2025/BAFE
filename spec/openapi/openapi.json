@@ -2645,6 +2645,10 @@
             "type": "number",
             "title": "Jd Ut"
           },
+          "house_system": {
+            "type": "string",
+            "title": "House System"
+          },
           "bodies": {
             "additionalProperties": {
               "$ref": "#/components/schemas/WesternBodyResponse"
@@ -2687,6 +2691,7 @@
         "type": "object",
         "required": [
           "jd_ut",
+          "house_system",
           "bodies",
           "provenance"
         ],
