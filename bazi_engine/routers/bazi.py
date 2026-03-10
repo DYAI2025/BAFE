@@ -6,8 +6,12 @@ from __future__ import annotations
 from datetime import timezone as _tz
 from typing import Any, Dict, List, Literal, Optional
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+_log = logging.getLogger(__name__)
 
 from ..bazi import compute_bazi, jdn_gregorian, sexagenary_day_index_from_date, hour_branch_index
 from ..constants import STEMS, BRANCHES, ANIMALS, DAY_OFFSET
@@ -187,4 +191,5 @@ def calculate_bazi_endpoint(req: BaziRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")

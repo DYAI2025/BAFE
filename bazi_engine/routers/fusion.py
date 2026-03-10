@@ -11,8 +11,12 @@ from __future__ import annotations
 from datetime import timezone
 from typing import Any, Dict, Literal, Optional
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+_log = logging.getLogger(__name__)
 
 from ..bazi import compute_bazi
 from ..exc import BaziEngineError
@@ -117,6 +121,7 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
@@ -173,6 +178,7 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
@@ -223,4 +229,5 @@ def calculate_tst_endpoint(req: TSTRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")

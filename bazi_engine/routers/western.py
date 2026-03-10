@@ -6,8 +6,12 @@ from __future__ import annotations
 from datetime import timezone
 from typing import Any, Dict, List, Literal, Optional
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+_log = logging.getLogger(__name__)
 
 from ..exc import BaziEngineError
 from ..provenance import build_provenance, normalize_house_system
@@ -87,4 +91,5 @@ def calculate_western_endpoint(req: WesternRequest) -> Dict[str, Any]:
     except BaziEngineError:
         raise
     except Exception:
+        _log.exception("Calculation failed")
         raise HTTPException(status_code=500, detail="Internal calculation error")
