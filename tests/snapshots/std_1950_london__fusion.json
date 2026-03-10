@@ -314,6 +314,13 @@
     "ephemeris_id": "swieph_sepl18",
     "house_system": "placidus",
     "parameter_set": {
+      "aspect_orbs": {
+        "conjunction": 8.0,
+        "opposition": 8.0,
+        "sextile": 6.0,
+        "square": 7.0,
+        "trine": 8.0
+      },
       "harmony_method": "dot_product",
       "hidden_stem_main_qi": 1.0,
       "hidden_stem_middle_qi": 0.5,
