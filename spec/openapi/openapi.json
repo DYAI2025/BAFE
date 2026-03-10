@@ -993,9 +993,15 @@
           "dates": {
             "$ref": "#/components/schemas/BaziDatesResponse"
           },
+          "transition": {
+            "$ref": "#/components/schemas/BaziTransitionResponse"
+          },
           "solar_terms_count": {
             "type": "integer",
             "title": "Solar Terms Count"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -1004,7 +1010,9 @@
           "pillars",
           "chinese",
           "dates",
-          "solar_terms_count"
+          "transition",
+          "solar_terms_count",
+          "provenance"
         ],
         "title": "BaziResponse"
       },
@@ -1077,6 +1085,40 @@
           "lichun_year_start"
         ],
         "title": "BaziTransition"
+      },
+      "BaziTransitionResponse": {
+        "properties": {
+          "solar_year": {
+            "type": "integer",
+            "title": "Solar Year"
+          },
+          "is_before_lichun": {
+            "type": "boolean",
+            "title": "Is Before Lichun"
+          },
+          "lichun_year_start": {
+            "type": "string",
+            "title": "Lichun Year Start"
+          },
+          "lichun_next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lichun Next"
+          }
+        },
+        "type": "object",
+        "required": [
+          "solar_year",
+          "is_before_lichun",
+          "lichun_year_start"
+        ],
+        "title": "BaziTransitionResponse"
       },
       "BuildResponse": {
         "properties": {
@@ -1466,6 +1508,9 @@
           "fusion_interpretation": {
             "type": "string",
             "title": "Fusion Interpretation"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -1475,7 +1520,8 @@
           "harmony_index",
           "elemental_comparison",
           "cosmic_state",
-          "fusion_interpretation"
+          "fusion_interpretation",
+          "provenance"
         ],
         "title": "FusionResponse"
       },
@@ -1750,6 +1796,54 @@
         ],
         "title": "Position"
       },
+      "ProvenanceResponse": {
+        "properties": {
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "parameter_set_id": {
+            "type": "string",
+            "title": "Parameter Set Id"
+          },
+          "ruleset_id": {
+            "type": "string",
+            "title": "Ruleset Id"
+          },
+          "ephemeris_id": {
+            "type": "string",
+            "title": "Ephemeris Id"
+          },
+          "tzdb_version_id": {
+            "type": "string",
+            "title": "Tzdb Version Id"
+          },
+          "house_system": {
+            "type": "string",
+            "title": "House System"
+          },
+          "zodiac_mode": {
+            "type": "string",
+            "title": "Zodiac Mode"
+          },
+          "computation_timestamp": {
+            "type": "string",
+            "title": "Computation Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine_version",
+          "parameter_set_id",
+          "ruleset_id",
+          "ephemeris_id",
+          "tzdb_version_id",
+          "house_system",
+          "zodiac_mode",
+          "computation_timestamp"
+        ],
+        "title": "ProvenanceResponse"
+      },
       "RingSectors": {
         "properties": {
           "sectors": {
@@ -1859,6 +1953,9 @@
           "true_solar_time_formatted": {
             "type": "string",
             "title": "True Solar Time Formatted"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -1868,7 +1965,8 @@
           "longitude_correction_hours",
           "equation_of_time_hours",
           "true_solar_time_hours",
-          "true_solar_time_formatted"
+          "true_solar_time_formatted",
+          "provenance"
         ],
         "title": "TSTResponse"
       },
@@ -2581,12 +2679,16 @@
               }
             ],
             "title": "Angles"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
         "required": [
           "jd_ut",
-          "bodies"
+          "bodies",
+          "provenance"
         ],
         "title": "WesternResponse"
       },
@@ -2757,6 +2859,9 @@
           "true_solar_time": {
             "type": "number",
             "title": "True Solar Time"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceResponse"
           }
         },
         "type": "object",
@@ -2765,7 +2870,8 @@
           "wu_xing_vector",
           "dominant_element",
           "equation_of_time",
-          "true_solar_time"
+          "true_solar_time",
+          "provenance"
         ],
         "title": "WxResponse"
       },
