@@ -1541,6 +1541,18 @@
             "type": "object",
             "title": "Harmony Index"
           },
+          "calibration": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibration"
+          },
           "elemental_comparison": {
             "additionalProperties": {
               "additionalProperties": {
@@ -1558,6 +1570,18 @@
           "fusion_interpretation": {
             "type": "string",
             "title": "Fusion Interpretation"
+          },
+          "contribution_ledger": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Ledger"
           },
           "house_quality": {
             "anyOf": [
@@ -1922,6 +1946,18 @@
           "computation_timestamp": {
             "type": "string",
             "title": "Computation Timestamp"
+          },
+          "parameter_set": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Set"
           }
         },
         "type": "object",
@@ -3079,6 +3115,18 @@
           "true_solar_time": {
             "type": "number",
             "title": "True Solar Time"
+          },
+          "contribution_ledger": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Ledger"
           },
           "provenance": {
             "$ref": "#/components/schemas/ProvenanceResponse"
