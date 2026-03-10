@@ -14,6 +14,18 @@ from typing import Any, Dict, Optional
 from . import __version__
 
 
+WUXING_PARAMETER_SET: Dict[str, Any] = {
+    "version": "1.0.0",
+    "retrograde_weight": 1.3,
+    "hidden_stem_main_qi": 1.0,
+    "hidden_stem_middle_qi": 0.5,
+    "hidden_stem_residual_qi": 0.3,
+    "stem_weight": 1.0,
+    "mercury_dual_rule": "earth_day_metal_night",
+    "harmony_method": "dot_product",
+}
+
+
 HOUSE_SYSTEM_LABELS: Dict[str, str] = {
     "P": "placidus",
     "O": "porphyry",
@@ -110,4 +122,6 @@ def build_provenance(
         zodiac_mode=zodiac_mode,
         computation_timestamp=datetime.now(timezone.utc).isoformat(),
     )
-    return prov.to_dict()
+    result = prov.to_dict()
+    result["parameter_set"] = WUXING_PARAMETER_SET
+    return result
