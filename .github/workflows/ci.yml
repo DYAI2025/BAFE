@@ -111,8 +111,8 @@ jobs:
         with:
           args: generate -i spec/openapi/openapi.json -g typescript-fetch -o /github/workspace/generated/ts-client
 
-      - name: Fix generated file permissions
-        run: sudo chmod -R u+w generated/ts-client
+      - name: Fix generated file ownership
+        run: sudo chown -R $(id -u):$(id -g) generated/ts-client
 
       - name: Compile generated client
         run: |

@@ -11,6 +11,7 @@ Set UPDATE_SNAPSHOTS=1 to regenerate baselines:
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 from typing import Any
@@ -220,13 +221,35 @@ def test_snapshot_stability(
 
     expected = _read_snapshot(snap)
 
-    assert actual == expected, (
+    assert _approx_equal(actual, expected), (
         f"Snapshot mismatch for {case_id} @ {endpoint_path}.\n"
         f"Snapshot file: {snap}\n"
         f"Run with UPDATE_SNAPSHOTS=1 to regenerate.\n"
         f"Diff (expected vs actual):\n"
         f"{_json_diff(expected, actual)}"
     )
+
+
+# Tolerance for floating-point comparison across platforms.
+# Swiss Ephemeris house calculations differ at ~1e-10 between macOS and Linux.
+_FLOAT_RTOL = 1e-8
+
+
+def _approx_equal(a: Any, b: Any) -> bool:
+    """Deep approximate equality: exact for strings/bools/ints, close for floats."""
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, dict):
+        if a.keys() != b.keys():
+            return False
+        return all(_approx_equal(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        if len(a) != len(b):
+            return False
+        return all(_approx_equal(x, y) for x, y in zip(a, b))
+    if isinstance(a, float):
+        return math.isclose(a, b, rel_tol=_FLOAT_RTOL, abs_tol=1e-12)
+    return a == b
 
 
 def _json_diff(expected: Any, actual: Any, path: str = "$") -> str:
