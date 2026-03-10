@@ -25,6 +25,11 @@ class WesternRequest(BaseModel):
     lat: float = Field(52.52, description="Latitude in degrees")
     ambiguousTime: AmbiguousTimeChoice = Field("earlier")
     nonexistentTime: NonexistentTimePolicy = Field("error")
+    zodiac_mode: Optional[str] = Field(
+        "tropical",
+        pattern=r"^(tropical|sidereal_lahiri|sidereal_fagan_bradley|sidereal_raman)$",
+        description="Zodiac reference frame. Default: tropical.",
+    )
 
 
 class WesternBodyResponse(BaseModel):
@@ -35,6 +40,15 @@ class WesternBodyResponse(BaseModel):
     zodiac_sign: Optional[int] = None
     degree_in_sign: Optional[float] = None
     is_retrograde: bool = False
+
+
+class AspectResponse(BaseModel):
+    planet1: str
+    planet2: str
+    type: str
+    angle: float
+    orb: float
+    exact_angle: float
 
 
 class HouseQuality(BaseModel):
@@ -50,6 +64,7 @@ class WesternResponse(BaseModel):
     bodies: Dict[str, WesternBodyResponse]
     houses: Optional[Dict[str, float]] = None
     angles: Optional[Dict[str, float]] = None
+    aspects: List[AspectResponse] = []
     house_quality: HouseQuality
     provenance: ProvenanceResponse
 

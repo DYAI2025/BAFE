@@ -137,7 +137,29 @@ def compute_western_chart(
         "Vertex": ascmc[3] if len(ascmc) > 3 else 0.0
     }
 
-    # Compute planetary aspects
+    # Apply ayanamsha correction for sidereal modes
+    if zodiac_mode in AYANAMSHA_MODES:
+        ayanamsha_id = AYANAMSHA_MODES[zodiac_mode]
+        swe.set_sid_mode(ayanamsha_id)
+        ayanamsha = swe.get_ayanamsa_ut(jd_ut)
+
+        # Adjust body longitudes
+        for body_data in bodies.values():
+            if "longitude" in body_data:
+                adj_lon = (body_data["longitude"] - ayanamsha) % 360
+                body_data["longitude"] = adj_lon
+                body_data["zodiac_sign"] = int(adj_lon // 30)
+                body_data["degree_in_sign"] = adj_lon % 30
+
+        # Adjust house cusps
+        for key in houses:
+            houses[key] = (houses[key] - ayanamsha) % 360
+
+        # Adjust angles
+        for key in angles:
+            angles[key] = (angles[key] - ayanamsha) % 360
+
+    # Compute planetary aspects (after any sidereal adjustment)
     aspects = compute_aspects(bodies)
 
     return {
