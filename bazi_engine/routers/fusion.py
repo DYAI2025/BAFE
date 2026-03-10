@@ -161,13 +161,14 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
             western_chart["bodies"], ascendant=asc,
         )
         wx_norm = wx_vector.normalize()
+        wx_dict = wx_norm.to_dict()
         day_of_year = dt.timetuple().tm_yday
         civil_time_hours = dt.hour + dt.minute / 60
         TST = true_solar_time(civil_time_hours, req.lon, day_of_year)
         return {
             "input": {"date": req.date, "tz": req.tz, "lon": req.lon, "lat": req.lat},
-            "wu_xing_vector":  wx_norm.to_dict(),
-            "dominant_element": max(wx_norm.to_dict(), key=lambda k: wx_norm.to_dict()[k]),
+            "wu_xing_vector":  wx_dict,
+            "dominant_element": max(wx_dict, key=wx_dict.get),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time":  TST,
             "contribution_ledger": {"western": wx_ledger},
