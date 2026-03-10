@@ -19,7 +19,7 @@ from ..exc import BaziEngineError
 from ..provenance import build_provenance, normalize_house_system
 from ..fusion import (
     compute_fusion_analysis,
-    calculate_wuxing_vector_from_planets,
+    calculate_wuxing_vector_from_planets_with_ledger,
     equation_of_time,
     true_solar_time,
 )
@@ -53,6 +53,7 @@ class FusionResponse(BaseModel):
     elemental_comparison: Dict[str, Dict[str, float]]
     cosmic_state: float
     fusion_interpretation: str
+    contribution_ledger: Optional[Dict[str, Any]] = None
     house_quality: Optional[HouseQuality] = None
     provenance: ProvenanceResponse
 
@@ -103,6 +104,7 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
             "elemental_comparison": fusion["elemental_comparison"],
             "cosmic_state":         fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"],
+            "contribution_ledger": fusion["contribution_ledger"],
             "house_quality": western_chart.get("house_quality"),
             "provenance": build_provenance(
                 house_system=normalize_house_system(western_chart.get("house_system")),
@@ -131,6 +133,7 @@ class WxResponse(BaseModel):
     dominant_element: str
     equation_of_time: float
     true_solar_time: float
+    contribution_ledger: Optional[Dict[str, Any]] = None
     provenance: ProvenanceResponse
 
 
@@ -144,7 +147,7 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
         )
         dt_utc = dt.astimezone(timezone.utc)
         western_chart = compute_western_chart(dt_utc, req.lat, req.lon)
-        wx_vector = calculate_wuxing_vector_from_planets(western_chart["bodies"])
+        wx_vector, wx_ledger = calculate_wuxing_vector_from_planets_with_ledger(western_chart["bodies"])
         wx_norm = wx_vector.normalize()
         day_of_year = dt.timetuple().tm_yday
         civil_time_hours = dt.hour + dt.minute / 60
@@ -155,6 +158,7 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
             "dominant_element": max(wx_norm.to_dict(), key=lambda k: wx_norm.to_dict()[k]),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time":  TST,
+            "contribution_ledger": {"western": wx_ledger},
             "provenance": build_provenance(
                 house_system=normalize_house_system(western_chart.get("house_system")),
             ),

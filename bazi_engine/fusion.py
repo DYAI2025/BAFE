@@ -26,8 +26,10 @@ from .wuxing import (                                        # noqa: F401
     WuXingVector,
     planet_to_wuxing,
     calculate_wuxing_vector_from_planets,
+    calculate_wuxing_vector_from_planets_with_ledger,
     is_night_chart,
     calculate_wuxing_from_bazi,
+    calculate_wuxing_from_bazi_with_ledger,
     calculate_harmony_index,
     interpret_harmony,
 )
@@ -92,8 +94,8 @@ def compute_fusion_analysis(
         Dict with wu_xing_vectors, harmony_index, elemental_comparison,
         cosmic_state, and fusion_interpretation.
     """
-    western_wuxing = calculate_wuxing_vector_from_planets(western_bodies)
-    bazi_wuxing    = calculate_wuxing_from_bazi(bazi_pillars)
+    western_wuxing, western_ledger = calculate_wuxing_vector_from_planets_with_ledger(western_bodies)
+    bazi_wuxing, bazi_ledger = calculate_wuxing_from_bazi_with_ledger(bazi_pillars)
     harmony        = calculate_harmony_index(western_wuxing, bazi_wuxing)
 
     western_norm = western_wuxing.normalize()
@@ -124,6 +126,7 @@ def compute_fusion_analysis(
         "fusion_interpretation": generate_fusion_interpretation(
             harmony["harmony_index"], elemental_comparison, western_wuxing, bazi_wuxing
         ),
+        "contribution_ledger": {"western": western_ledger, "bazi": bazi_ledger},
     }
 
 
