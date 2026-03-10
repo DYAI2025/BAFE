@@ -6,6 +6,7 @@ Cached per hour (ADR-1: cachetools.TTLCache).
 """
 from __future__ import annotations
 
+import math
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -99,7 +100,9 @@ def compute_transit_now(
         sector_intensity[pdata["sector"]] += weight
 
     # Normalize to 0-1 range
-    max_val = max(sector_intensity) if max(sector_intensity) > 0 else 1.0
+    max_val = max(sector_intensity, default=0.0)
+    if math.isnan(max_val) or max_val <= 0:
+        max_val = 1.0
     sector_intensity = [round(v / max_val, 2) for v in sector_intensity]
 
     result = {
@@ -132,6 +135,11 @@ def compute_transit_state(
     Returns:
         Transit State JSON conforming to TRANSIT_STATE_v1 schema
     """
+    if len(soulprint_sectors) != 12 or len(quiz_sectors) != 12:
+        raise ValueError(
+            f"Sector arrays must have exactly 12 elements. "
+            f"Got soulprint={len(soulprint_sectors)}, quiz={len(quiz_sectors)}"
+        )
     transit_now = compute_transit_now(dt_utc=dt_utc, ephe_path=ephe_path)
     if dt_utc is None:
         dt_utc = datetime.now(timezone.utc)

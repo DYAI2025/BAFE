@@ -1564,9 +1564,7 @@
       "NarrativeRequest": {
         "properties": {
           "transit_state": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Transit State"
+            "$ref": "#/components/schemas/TransitStateInput"
           }
         },
         "type": "object",
@@ -2101,6 +2099,59 @@
         ],
         "title": "TransitContribution"
       },
+      "TransitEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^(resonance_jump|dominance_shift|moon_event)$",
+            "title": "Type",
+            "description": "Event type identifier."
+          },
+          "priority": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Priority",
+            "description": "Priority (1 = highest)."
+          },
+          "sector": {
+            "type": "integer",
+            "maximum": 11.0,
+            "minimum": 0.0,
+            "title": "Sector",
+            "description": "Zodiac sector index (0-11)."
+          },
+          "trigger_planet": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Trigger Planet",
+            "description": "Planet that triggered the event (empty string for dominance_shift)."
+          },
+          "description_de": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description De",
+            "description": "German description of the event."
+          },
+          "personal_context": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Personal Context",
+            "description": "Personal context message."
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "priority",
+          "sector",
+          "trigger_planet",
+          "description_de",
+          "personal_context"
+        ],
+        "title": "TransitEvent",
+        "description": "A single transit event as produced by compute_transit_state()."
+      },
       "TransitNowResponse": {
         "properties": {
           "computed_at": {
@@ -2129,6 +2180,49 @@
           "sector_intensity"
         ],
         "title": "TransitNowResponse"
+      },
+      "TransitStateInput": {
+        "properties": {
+          "schema": {
+            "type": "string",
+            "pattern": "^TRANSIT_STATE_v\\d+$",
+            "title": "Schema",
+            "description": "Schema version identifier.",
+            "default": "TRANSIT_STATE_v1"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At",
+            "description": "ISO 8601 UTC timestamp of generation."
+          },
+          "ring": {
+            "$ref": "#/components/schemas/RingSectors"
+          },
+          "transit_contribution": {
+            "$ref": "#/components/schemas/TransitContribution"
+          },
+          "delta": {
+            "$ref": "#/components/schemas/Delta"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TransitEvent"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Events",
+            "description": "Detected transit events."
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "ring",
+          "transit_contribution",
+          "delta"
+        ],
+        "title": "TransitStateInput",
+        "description": "Typed transit state matching the TRANSIT_STATE_v1 schema."
       },
       "TransitStateRequest": {
         "properties": {
@@ -2645,6 +2739,10 @@
             "type": "number",
             "title": "Jd Ut"
           },
+          "house_system": {
+            "type": "string",
+            "title": "House System"
+          },
           "bodies": {
             "additionalProperties": {
               "$ref": "#/components/schemas/WesternBodyResponse"
@@ -2687,6 +2785,7 @@
         "type": "object",
         "required": [
           "jd_ut",
+          "house_system",
           "bodies",
           "provenance"
         ],

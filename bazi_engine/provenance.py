@@ -14,6 +14,25 @@ from typing import Any, Dict, Optional
 from . import __version__
 
 
+HOUSE_SYSTEM_LABELS: Dict[str, str] = {
+    "P": "placidus",
+    "O": "porphyry",
+    "W": "whole_sign",
+}
+
+
+def normalize_house_system(code: Optional[str]) -> str:
+    """Map single-char house system code to stable label for provenance.
+
+    ``compute_western_chart()`` returns ``"P"``, ``"O"``, or ``"W"``
+    depending on latitude-driven fallback.  We normalise to a human-readable
+    lowercase label so the provenance block is always consistent.
+    """
+    if code is None:
+        return "unknown"
+    return HOUSE_SYSTEM_LABELS.get(code, code.lower())
+
+
 def _detect_tzdb_version() -> str:
     """Best-effort detection of the IANA tzdata version."""
     try:

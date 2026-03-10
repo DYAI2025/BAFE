@@ -100,6 +100,10 @@ class SwissEphBackend:
         return norm360(lon)
 
     def solcross_ut(self, target_lon_deg: float, jd_start_ut: float) -> Optional[float]:
+        # swe.solcross_ut returns a plain float (no return-flags tuple),
+        # so we cannot detect MOSEPH fallback here at runtime.
+        # Protection is at __post_init__: SWIEPH mode refuses to start
+        # without SE1 files, so solcross_ut will always use the correct backend.
         return swe.solcross_ut(target_lon_deg, jd_start_ut, self.flags)
 
     def calc_ut(
@@ -131,16 +135,12 @@ def jd_ut_to_datetime_utc(jd_ut: float) -> datetime:
     sec = rem - minute * 60.0
     second = int(sec)
     micro = int(round((sec - second) * 1_000_000))
+    # Clamp microseconds (rounding can push to 1_000_000)
     if micro >= 1_000_000:
-        micro -= 1_000_000
+        micro = 0
         second += 1
-    if second >= 60:
-        second -= 60
-        minute += 1
-    if minute >= 60:
-        minute -= 60
-        hour += 1
-    base = datetime(y, m, d, 0, 0, 0, 0, tzinfo=timezone.utc)
+    # Use timedelta to handle all overflow cascades (second->minute->hour->day)
+    base = datetime(y, m, d, tzinfo=timezone.utc)
     return base + timedelta(hours=hour, minutes=minute, seconds=second, microseconds=micro)
 
 

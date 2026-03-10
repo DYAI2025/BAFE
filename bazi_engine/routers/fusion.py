@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from ..bazi import compute_bazi
 from ..exc import BaziEngineError
-from ..provenance import build_provenance
+from ..provenance import build_provenance, normalize_house_system
 from ..fusion import (
     compute_fusion_analysis,
     calculate_wuxing_vector_from_planets,
@@ -26,7 +26,7 @@ from ..fusion import (
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..types import BaziInput, Fold
 from ..western import compute_western_chart
-from .shared import format_pillar
+from .shared import format_pillar, ProvenanceResponse
 
 router = APIRouter(prefix="/calculate", tags=["Fusion / Wu-Xing"])
 
@@ -43,17 +43,6 @@ class FusionRequest(BaseModel):
     bazi_pillars: Optional[Dict[str, Dict[str, str]]] = Field(
         None, description="BaZi pillars (auto-computed if omitted)"
     )
-
-
-class ProvenanceResponse(BaseModel):
-    engine_version: str
-    parameter_set_id: str
-    ruleset_id: str
-    ephemeris_id: str
-    tzdb_version_id: str
-    house_system: str
-    zodiac_mode: str
-    computation_timestamp: str
 
 
 class FusionResponse(BaseModel):
@@ -112,12 +101,14 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
             "elemental_comparison": fusion["elemental_comparison"],
             "cosmic_state":         fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"],
-            "provenance": build_provenance(),
+            "provenance": build_provenance(
+                house_system=normalize_house_system(western_chart.get("house_system")),
+            ),
         }
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
 # ── /calculate/wuxing ────────────────────────────────────────────────────────
@@ -161,12 +152,14 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
             "dominant_element": max(wx_norm.to_dict(), key=lambda k: wx_norm.to_dict()[k]),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time":  TST,
-            "provenance": build_provenance(),
+            "provenance": build_provenance(
+                house_system=normalize_house_system(western_chart.get("house_system")),
+            ),
         }
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")
 
 
 # ── /calculate/tst ───────────────────────────────────────────────────────────
@@ -215,5 +208,5 @@ def calculate_tst_endpoint(req: TSTRequest) -> Dict[str, Any]:
         }
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")

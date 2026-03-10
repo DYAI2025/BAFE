@@ -32,12 +32,13 @@ RUN mkdir -p /usr/local/share/swisseph && \
 # Set ephemeris path
 ENV SE_EPHE_PATH=/usr/local/share/swisseph
 
-# Install Python dependencies first (cached layer)
-COPY pyproject.toml .
+# Install Python dependencies from pinned lockfile (deterministic builds)
+COPY requirements.lock .
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install pyswisseph>=2.10.3 fastapi>=0.109.0 uvicorn[standard]>=0.27.0 jsonschema>=4.20.0 cachetools>=5.3.0
+    pip install -r requirements.lock
 
 # Copy application code LAST (invalidates on every code change)
+COPY pyproject.toml .
 COPY bazi_engine/ ./bazi_engine/
 COPY spec/ ./spec/
 

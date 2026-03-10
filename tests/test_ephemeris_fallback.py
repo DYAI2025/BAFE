@@ -11,6 +11,7 @@ Tests that:
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -28,6 +29,19 @@ from bazi_engine.exc import EphemerisUnavailableError
 def _clean_env():
     """Return env dict with EPHEMERIS_MODE removed."""
     return {k: v for k, v in os.environ.items() if k != "EPHEMERIS_MODE"}
+
+
+def _make_swieph_backend(tmp_path: Path) -> SwissEphBackend:
+    """Create a SWIEPH backend with dummy SE1 files (no frozen-dataclass mutation)."""
+    from bazi_engine.ephemeris import EPHEMERIS_FILES_REQUIRED
+    for f in EPHEMERIS_FILES_REQUIRED:
+        (tmp_path / f).touch()
+    ensure_ephemeris_files.cache_clear()
+    try:
+        with patch.dict(os.environ, _clean_env(), clear=True):
+            return SwissEphBackend(mode="SWIEPH", ephe_path=str(tmp_path))
+    finally:
+        ensure_ephemeris_files.cache_clear()
 
 
 # ---------------------------------------------------------------------------
@@ -110,17 +124,12 @@ class TestSwissEphBackendInit:
                 SwissEphBackend(mode="SWIEPH", ephe_path=str(tmp_path))
         ensure_ephemeris_files.cache_clear()
 
+    @pytest.mark.swieph
     def test_swieph_with_files_ok(self, tmp_path):
         """SWIEPH mode succeeds when all required files exist."""
-        from bazi_engine.ephemeris import EPHEMERIS_FILES_REQUIRED
-        ensure_ephemeris_files.cache_clear()
-        for fname in EPHEMERIS_FILES_REQUIRED:
-            (tmp_path / fname).touch()
-        with patch.dict(os.environ, _clean_env(), clear=True):
-            backend = SwissEphBackend(mode="SWIEPH", ephe_path=str(tmp_path))
-            assert backend.mode == "SWIEPH"
-            assert backend.flags == swe.FLG_SWIEPH
-        ensure_ephemeris_files.cache_clear()
+        backend = _make_swieph_backend(tmp_path)
+        assert backend.mode == "SWIEPH"
+        assert backend.flags == swe.FLG_SWIEPH
 
     def test_default_mode_is_swieph(self):
         """Default mode should be SWIEPH, not AUTO."""
@@ -135,44 +144,48 @@ class TestSwissEphBackendInit:
 class TestRuntimeFallbackDetection:
     """Verify calc_ut checks catch runtime MOSEPH fallback."""
 
-    def test_sun_lon_deg_ut_catches_fallback(self):
+    def test_sun_lon_deg_ut_catches_fallback(self, tmp_path):
         """sun_lon_deg_ut raises if swe.calc_ut returns MOSEPH flags."""
-        backend = SwissEphBackend(mode="MOSEPH")
-        # Override flags to SWIEPH to simulate a mismatch scenario
-        object.__setattr__(backend, "flags", swe.FLG_SWIEPH)
+        backend = _make_swieph_backend(tmp_path)
+        assert backend.flags == swe.FLG_SWIEPH
 
-        # Mock calc_ut to return MOSEPH flags (simulating silent fallback)
         mock_result = ((100.0, 0.0, 1.0, 0.0, 0.0, 0.0), swe.FLG_MOSEPH)
         with patch("bazi_engine.ephemeris.swe.calc_ut", return_value=mock_result):
             with pytest.raises(EphemerisUnavailableError, match="silently fell back"):
                 backend.sun_lon_deg_ut(2460000.0)
 
-    def test_sun_lon_deg_ut_ok_when_swieph_returned(self):
+    def test_sun_lon_deg_ut_ok_when_swieph_returned(self, tmp_path):
         """sun_lon_deg_ut succeeds when swe.calc_ut returns SWIEPH flags."""
-        backend = SwissEphBackend(mode="MOSEPH")
-        object.__setattr__(backend, "flags", swe.FLG_SWIEPH)
+        backend = _make_swieph_backend(tmp_path)
 
         mock_result = ((100.0, 0.0, 1.0, 0.0, 0.0, 0.0), swe.FLG_SWIEPH)
         with patch("bazi_engine.ephemeris.swe.calc_ut", return_value=mock_result):
             lon = backend.sun_lon_deg_ut(2460000.0)
             assert lon == 100.0
 
-    def test_calc_ut_wrapper_catches_fallback(self):
-        """The new calc_ut wrapper method raises on MOSEPH fallback."""
-        backend = SwissEphBackend(mode="MOSEPH")
-        object.__setattr__(backend, "flags", swe.FLG_SWIEPH)
+    def test_calc_ut_wrapper_catches_fallback(self, tmp_path):
+        """The calc_ut wrapper method raises on MOSEPH fallback."""
+        backend = _make_swieph_backend(tmp_path)
 
         mock_result = ((100.0, 0.0, 1.0, 0.0, 0.0, 0.0), swe.FLG_MOSEPH)
         with patch("bazi_engine.ephemeris.swe.calc_ut", return_value=mock_result):
             with pytest.raises(EphemerisUnavailableError):
                 backend.calc_ut(2460000.0, swe.SUN)
 
+    def test_solcross_ut_uses_backend_flags(self, tmp_path):
+        """solcross_ut passes self.flags to swe.solcross_ut."""
+        backend = _make_swieph_backend(tmp_path)
+
+        with patch("bazi_engine.ephemeris.swe.solcross_ut", return_value=2460000.5) as mock:
+            result = backend.solcross_ut(315.0, 2460000.0)
+            assert result == 2460000.5
+            mock.assert_called_once_with(315.0, 2460000.0, swe.FLG_SWIEPH)
+
     def test_moseph_mode_no_false_alarm(self):
         """MOSEPH mode should NOT raise even though MOSEPH flags returned."""
         backend = SwissEphBackend(mode="MOSEPH")
         assert backend.flags == swe.FLG_MOSEPH
 
-        # sun_lon_deg_ut with MOSEPH flags should not raise
         mock_result = ((100.0, 0.0, 1.0, 0.0, 0.0, 0.0), swe.FLG_MOSEPH)
         with patch("bazi_engine.ephemeris.swe.calc_ut", return_value=mock_result):
             lon = backend.sun_lon_deg_ut(2460000.0)
@@ -194,7 +207,6 @@ class TestWesternFallbackDetection:
 
         dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
-        # Mock SwissEphBackend init to succeed, then calc_ut to return MOSEPH
         with patch("bazi_engine.western.SwissEphBackend") as MockBackend:
             mock_backend = MagicMock()
             mock_backend.flags = swe.FLG_SWIEPH
@@ -265,3 +277,33 @@ class TestEnsureEphemerisFiles:
         result = ensure_ephemeris_files(str(tmp_path))
         assert result == str(tmp_path)
         ensure_ephemeris_files.cache_clear()
+
+
+# ---------------------------------------------------------------------------
+# jd_ut_to_datetime_utc edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestJdUtToDatetimeUtc:
+    """Edge cases for Julian Day to datetime conversion."""
+
+    def test_microsecond_overflow_at_boundary(self):
+        """Microsecond rounding near 999999.5 should not crash."""
+        from bazi_engine.ephemeris import jd_ut_to_datetime_utc, datetime_utc_to_jd_ut
+        from datetime import datetime, timezone
+        dt = datetime(2024, 1, 1, 23, 59, 59, 999999, tzinfo=timezone.utc)
+        jd = datetime_utc_to_jd_ut(dt)
+        result = jd_ut_to_datetime_utc(jd)
+        assert result.year == 2024
+        assert result.month == 1
+        assert result.day in (1, 2)
+
+    def test_roundtrip_preserves_date(self):
+        """datetime -> JD -> datetime should preserve the date (within 1 second)."""
+        from bazi_engine.ephemeris import jd_ut_to_datetime_utc, datetime_utc_to_jd_ut
+        from datetime import datetime, timezone
+        original = datetime(2024, 6, 15, 14, 30, 45, tzinfo=timezone.utc)
+        jd = datetime_utc_to_jd_ut(original)
+        result = jd_ut_to_datetime_utc(jd)
+        diff = abs((result - original).total_seconds())
+        assert diff < 1.0, f"Roundtrip drift: {diff}s"

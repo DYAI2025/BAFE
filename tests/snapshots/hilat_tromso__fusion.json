@@ -56,7 +56,7 @@
   "provenance": {
     "engine_version": "1.0.0-rc1-20260220",
     "ephemeris_id": "moshier_analytic",
-    "house_system": "placidus",
+    "house_system": "porphyry",
     "parameter_set_id": "default_v1",
     "ruleset_id": "traditional_bazi_2026",
     "tzdb_version_id": "unknown",

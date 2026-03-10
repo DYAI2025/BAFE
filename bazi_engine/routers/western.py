@@ -10,9 +10,10 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ..exc import BaziEngineError
-from ..provenance import build_provenance
+from ..provenance import build_provenance, normalize_house_system
 from ..time_utils import resolve_local_iso, AmbiguousTimeChoice, NonexistentTimePolicy
 from ..western import compute_western_chart
+from .shared import ProvenanceResponse
 
 router = APIRouter(prefix="/calculate", tags=["Western Astrology"])
 
@@ -36,19 +37,9 @@ class WesternBodyResponse(BaseModel):
     is_retrograde: bool = False
 
 
-class ProvenanceResponse(BaseModel):
-    engine_version: str
-    parameter_set_id: str
-    ruleset_id: str
-    ephemeris_id: str
-    tzdb_version_id: str
-    house_system: str
-    zodiac_mode: str
-    computation_timestamp: str
-
-
 class WesternResponse(BaseModel):
     jd_ut: float
+    house_system: str
     bodies: Dict[str, WesternBodyResponse]
     houses: Optional[Dict[str, float]] = None
     angles: Optional[Dict[str, float]] = None
@@ -64,9 +55,11 @@ def calculate_western_endpoint(req: WesternRequest) -> Dict[str, Any]:
         )
         dt_utc = dt_local.astimezone(timezone.utc)
         result = compute_western_chart(dt_utc, req.lat, req.lon)
-        result["provenance"] = build_provenance()
+        result["provenance"] = build_provenance(
+            house_system=normalize_house_system(result.get("house_system")),
+        )
         return result
     except BaziEngineError:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal calculation error")
