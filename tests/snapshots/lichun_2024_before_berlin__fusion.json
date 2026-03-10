@@ -1,0 +1,81 @@
+{
+  "cosmic_state": 0.8733,
+  "elemental_comparison": {
+    "Erde": {
+      "bazi": 0.672,
+      "difference": -0.371,
+      "western": 0.301
+    },
+    "Feuer": {
+      "bazi": 0.468,
+      "difference": -0.017,
+      "western": 0.451
+    },
+    "Holz": {
+      "bazi": 0.407,
+      "difference": 0.285,
+      "western": 0.692
+    },
+    "Metall": {
+      "bazi": 0.265,
+      "difference": -0.114,
+      "western": 0.15
+    },
+    "Wasser": {
+      "bazi": 0.305,
+      "difference": 0.146,
+      "western": 0.451
+    }
+  },
+  "fusion_interpretation": "Harmonie-Index: 87.33%\nStarke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie\n\nWestliche Dominanz: Holz\nÖstliche Dominanz: Erde\n\nIhre westliche und östliche Chart stehen in starker Resonanz.\nDie Energien ergänzen sich harmonisch.",
+  "harmony_index": {
+    "bazi_vector": {
+      "Erde": 0.671931944,
+      "Feuer": 0.4683162034,
+      "Holz": 0.4072314812,
+      "Metall": 0.2647004628,
+      "Wasser": 0.3054236109
+    },
+    "harmony_index": 0.8733,
+    "interpretation": "Starke Resonanz - Westliche und östliche Matrix stehen in perfekter Harmonie",
+    "method": "dot_product",
+    "western_vector": {
+      "Erde": 0.3009646327,
+      "Feuer": 0.4514469491,
+      "Holz": 0.6922186552,
+      "Metall": 0.1504823164,
+      "Wasser": 0.4514469491
+    }
+  },
+  "input": {
+    "date": "2024-02-04T09:26:00",
+    "lat": 52.52,
+    "lon": 13.405,
+    "tz": "Europe/Berlin"
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "wu_xing_vectors": {
+    "bazi_pillars": {
+      "Erde": 0.671931944,
+      "Feuer": 0.4683162034,
+      "Holz": 0.4072314812,
+      "Metall": 0.2647004628,
+      "Wasser": 0.3054236109
+    },
+    "western_planets": {
+      "Erde": 0.3009646327,
+      "Feuer": 0.4514469491,
+      "Holz": 0.6922186552,
+      "Metall": 0.1504823164,
+      "Wasser": 0.4514469491
+    }
+  }
+}

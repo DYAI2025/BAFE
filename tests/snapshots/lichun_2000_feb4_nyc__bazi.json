@@ -1,0 +1,69 @@
+{
+  "chinese": {
+    "day_master": "Ren",
+    "hour_master": "Wu",
+    "month_master": "Wu",
+    "year": {
+      "animal": "Dragon",
+      "branch": "Chen",
+      "stem": "Geng"
+    }
+  },
+  "dates": {
+    "birth_local": "2000-02-04T15:00:00-05:00",
+    "birth_utc": "2000-02-04T20:00:00+00:00",
+    "lichun_local": "2000-02-04T07:40:22.884223-05:00"
+  },
+  "input": {
+    "ambiguousTime": "earlier",
+    "boundary": "midnight",
+    "date": "2000-02-04T15:00:00",
+    "lat": 40.7128,
+    "lon": -74.006,
+    "nonexistentTime": "error",
+    "standard": "CIVIL",
+    "tz": "America/New_York"
+  },
+  "pillars": {
+    "day": {
+      "element": "Wasser",
+      "stamm": "Ren",
+      "tier": "Drache",
+      "zweig": "Chen"
+    },
+    "hour": {
+      "element": "Erde",
+      "stamm": "Wu",
+      "tier": "Affe",
+      "zweig": "Shen"
+    },
+    "month": {
+      "element": "Erde",
+      "stamm": "Wu",
+      "tier": "Tiger",
+      "zweig": "Yin"
+    },
+    "year": {
+      "element": "Metall",
+      "stamm": "Geng",
+      "tier": "Drache",
+      "zweig": "Chen"
+    }
+  },
+  "provenance": {
+    "engine_version": "1.0.0-rc1-20260220",
+    "ephemeris_id": "moshier_analytic",
+    "house_system": "placidus",
+    "parameter_set_id": "default_v1",
+    "ruleset_id": "traditional_bazi_2026",
+    "tzdb_version_id": "unknown",
+    "zodiac_mode": "tropical"
+  },
+  "solar_terms_count": 24,
+  "transition": {
+    "is_before_lichun": false,
+    "lichun_next": "2001-02-03T13:28:50.746517-05:00",
+    "lichun_year_start": "2000-02-04T07:40:22.884223-05:00",
+    "solar_year": 2000
+  }
+}

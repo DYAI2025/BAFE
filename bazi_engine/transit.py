@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import swisseph as swe
 from cachetools import TTLCache
 
-from .ephemeris import SwissEphBackend, datetime_utc_to_jd_ut
+from .ephemeris import SwissEphBackend, assert_no_moseph_fallback, datetime_utc_to_jd_ut
 
 # Planet IDs for transit calculation (7 classical planets)
 TRANSIT_PLANETS = {
@@ -82,7 +82,8 @@ def compute_transit_now(
     planets: Dict[str, Dict[str, Any]] = {}
 
     for name, pid in TRANSIT_PLANETS.items():
-        (lon_deg, _lat, _dist, speed_lon, _, _), _ret = swe.calc_ut(jd_ut, pid, flags)
+        (lon_deg, _lat, _dist, speed_lon, _, _), ret = swe.calc_ut(jd_ut, pid, flags)
+        assert_no_moseph_fallback(flags, ret)
         sector = int(lon_deg // 30)
         planets[name] = {
             "longitude": round(lon_deg, 1),

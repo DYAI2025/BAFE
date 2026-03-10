@@ -41,7 +41,7 @@ class LeanDeepClient:
             Tuple von (aggregiertes VADProfile, Debug-Info dict)
         """
         result = self.analyze(text)
-        detections = result.get("detections", [])
+        detections = result.get("markers", []) or result.get("detections", [])
 
         if not detections:
             return VADProfile(0.0, 0.0, 0.0), {
@@ -101,5 +101,21 @@ class LeanDeepClient:
             with httpx.Client(timeout=3.0) as client:
                 resp = client.get(f"{self.base_url}/v1/health")
                 return resp.status_code == 200
+        except Exception:
+            return False
+
+    def has_vad_support(self) -> bool:
+        """Check ob LeanDeep-Marker VAD-Daten liefern.
+
+        Sendet einen Probe-Text und prueft ob mindestens ein Marker
+        ein 'vad' oder 'vad_estimate' Feld enthaelt.
+        """
+        try:
+            result = self.analyze("Love, passion, joy, desire")
+            markers = result.get("markers", []) or result.get("detections", [])
+            for m in markers:
+                if m.get("vad") or m.get("vad_estimate"):
+                    return True
+            return False
         except Exception:
             return False

@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from ..bazi import compute_bazi
 from ..exc import BaziEngineError
+from ..provenance import build_provenance
 from ..fusion import (
     compute_fusion_analysis,
     calculate_wuxing_vector_from_planets,
@@ -44,6 +45,17 @@ class FusionRequest(BaseModel):
     )
 
 
+class ProvenanceResponse(BaseModel):
+    engine_version: str
+    parameter_set_id: str
+    ruleset_id: str
+    ephemeris_id: str
+    tzdb_version_id: str
+    house_system: str
+    zodiac_mode: str
+    computation_timestamp: str
+
+
 class FusionResponse(BaseModel):
     input: Dict[str, Any]
     wu_xing_vectors: Dict[str, Dict[str, float]]
@@ -51,6 +63,7 @@ class FusionResponse(BaseModel):
     elemental_comparison: Dict[str, Dict[str, float]]
     cosmic_state: float
     fusion_interpretation: str
+    provenance: ProvenanceResponse
 
 
 @router.post("/fusion", response_model=FusionResponse)
@@ -99,6 +112,7 @@ def calculate_fusion_endpoint(req: FusionRequest) -> Dict[str, Any]:
             "elemental_comparison": fusion["elemental_comparison"],
             "cosmic_state":         fusion["cosmic_state"],
             "fusion_interpretation": fusion["fusion_interpretation"],
+            "provenance": build_provenance(),
         }
     except BaziEngineError:
         raise
@@ -123,6 +137,7 @@ class WxResponse(BaseModel):
     dominant_element: str
     equation_of_time: float
     true_solar_time: float
+    provenance: ProvenanceResponse
 
 
 @router.post("/wuxing", response_model=WxResponse)
@@ -146,6 +161,7 @@ def calculate_wuxing_endpoint(req: WxRequest) -> Dict[str, Any]:
             "dominant_element": max(wx_norm.to_dict(), key=lambda k: wx_norm.to_dict()[k]),
             "equation_of_time": equation_of_time(day_of_year),
             "true_solar_time":  TST,
+            "provenance": build_provenance(),
         }
     except BaziEngineError:
         raise
@@ -170,6 +186,7 @@ class TSTResponse(BaseModel):
     equation_of_time_hours: float
     true_solar_time_hours: float
     true_solar_time_formatted: str
+    provenance: ProvenanceResponse
 
 
 @router.post("/tst", response_model=TSTResponse)
@@ -194,6 +211,7 @@ def calculate_tst_endpoint(req: TSTRequest) -> Dict[str, Any]:
             "equation_of_time_hours":       round(E_t, 4),
             "true_solar_time_hours":        round(TST, 4),
             "true_solar_time_formatted":    f"{hours:02d}:{minutes:02d}",
+            "provenance": build_provenance(),
         }
     except BaziEngineError:
         raise

@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 import swisseph as swe
-from .ephemeris import SwissEphBackend, datetime_utc_to_jd_ut
+from .ephemeris import SwissEphBackend, assert_no_moseph_fallback, datetime_utc_to_jd_ut
 
 PLANETS = {
     "Sun": swe.SUN,
@@ -54,6 +54,7 @@ def compute_western_chart(
     for name, pid in PLANETS.items():
         try:
             (lon_deg, lat_deg, dist, speed_lon, _, _), ret = swe.calc_ut(jd_ut, pid, flags)
+            assert_no_moseph_fallback(flags, ret)
             bodies[name] = {
                 "longitude": lon_deg,
                 "latitude": lat_deg,
