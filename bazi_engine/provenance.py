@@ -75,6 +75,10 @@ def _detect_ephemeris_id() -> str:
     return "swieph_sepl18"
 
 
+# Cache at module load — env var won't change during server lifetime
+_EPHEMERIS_ID: str = _detect_ephemeris_id()
+
+
 @dataclass(frozen=True)
 class Provenance:
     """Immutable provenance record attached to every /calculate/* response."""
@@ -116,7 +120,7 @@ def build_provenance(
         engine_version=__version__,
         parameter_set_id=parameter_set_id,
         ruleset_id=ruleset_id,
-        ephemeris_id=_detect_ephemeris_id(),
+        ephemeris_id=_EPHEMERIS_ID,
         tzdb_version_id=_detect_tzdb_version(),
         house_system=house_system,
         zodiac_mode=zodiac_mode,
