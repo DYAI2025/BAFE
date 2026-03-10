@@ -75,13 +75,22 @@ def calculate_wuxing_vector_from_planets(
 def calculate_wuxing_vector_from_planets_with_ledger(
     bodies: Dict[str, Dict[str, Any]],
     use_retrograde_weight: bool = True,
+    ascendant: Optional[float] = None,
 ) -> tuple[WuXingVector, list[dict[str, Any]]]:
-    """Like calculate_wuxing_vector_from_planets but also returns per-planet ledger."""
+    """Like calculate_wuxing_vector_from_planets but also returns per-planet ledger.
+
+    Args:
+        bodies:                 Planetary data dict from compute_western_chart().
+        use_retrograde_weight:  If True, retrograde planets carry 1.3x weight.
+        ascendant:              Ascendant longitude for day/night detection.
+                                If None, defaults to day chart (assumed_day quality).
+    """
     values = [0.0, 0.0, 0.0, 0.0, 0.0]
     ledger: list[dict[str, Any]] = []
     sun_data = bodies.get("Sun", {})
     sun_lon = sun_data.get("longitude", 0)
-    night = is_night_chart(sun_lon)
+    night = is_night_chart(sun_lon, ascendant)
+    chart_type_quality = "exact" if ascendant is not None else "assumed_day"
 
     traditional_planets = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"}
     modern_planets = {"Uranus", "Neptune", "Pluto"}
@@ -106,14 +115,17 @@ def calculate_wuxing_vector_from_planets_with_ledger(
         else:
             category = "experimental"
 
-        ledger.append({
+        entry: dict[str, Any] = {
             "planet": planet,
             "element": element,
             "weight": weight,
             "is_retrograde": is_retrograde,
             "rationale": rationale,
             "category": category,
-        })
+        }
+        if planet == "Mercury":
+            entry["chart_type_quality"] = chart_type_quality
+        ledger.append(entry)
 
     return WuXingVector(*values), ledger
 
